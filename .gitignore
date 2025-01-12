@@ -4,3 +4,6 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 properties.env
+/urls/
+RustVote.code-workspace
+tests-examples

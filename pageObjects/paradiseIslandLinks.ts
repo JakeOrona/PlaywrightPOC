@@ -22,27 +22,27 @@ export class votingAndLinksPage {
     await this.page.goto('https://rust.paradiseisland.gg/links', { timeout: 60000 });
   }
 
-    // Function to refresh a tab until the target element is found
-    async refreshUntilElementFound(tab: Page, targetLocator: string, timeout: number = 60000) {
-        const startTime = Date.now();
-    
-        while (Date.now() - startTime < timeout) {
-          try {
-            // Reload the page
-            await tab.reload({ waitUntil: 'load' });
-            
-            // Wait for the target element to be visible
-            await tab.locator(targetLocator).waitFor({ state: 'visible', timeout: 5000 });
-            console.log("Found the element!");
-            return;
-          } catch (error) {
-            console.log("Element not found yet, retrying...");
-            await tab.waitForTimeout(3000); // Wait a short time before next retry
-          }
+  // Function to refresh a tab until the target element is found
+  async refreshUntilElementFound(tab: Page, targetLocator: string, timeout: number = 60000) {
+      const startTime = Date.now();
+  
+      while (Date.now() - startTime < timeout) {
+        try {
+          // Reload the page
+          await tab.reload({ waitUntil: 'load' });
+          
+          // Wait for the target element to be visible
+          await tab.locator(targetLocator).waitFor({ state: 'visible', timeout: 5000 });
+          console.log("Found the element!");
+          return;
+        } catch (error) {
+          console.log("Element not found yet, retrying...");
+          await tab.waitForTimeout(3000); // Wait a short time before next retry
         }
-    
-        throw new Error(`Timeout reached. Element not found within ${timeout / 1000} seconds.`);
       }
+  
+      throw new Error(`Timeout reached. Element not found within ${timeout / 1000} seconds.`);
+    }
 
   async openLinksAndClickVote() {
     // Open the first link (this is where we will sign in)

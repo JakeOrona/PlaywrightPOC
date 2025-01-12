@@ -3,6 +3,7 @@
 import { votingAndLinksPage } from '../pageObjects/paradiseIslandLinks';
 import { test } from '@playwright/test';
 
+// first test
 test('Open Voting Links page', async ({ page }) => {
   const votingPage = new votingAndLinksPage(page);
   await votingPage.goto();
