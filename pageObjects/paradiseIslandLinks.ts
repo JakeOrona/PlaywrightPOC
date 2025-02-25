@@ -1,129 +1,197 @@
 import { expect, type Locator, type Page } from '@playwright/test';
 import dotenv from 'dotenv';
+import { loadVotingLinks, refreshUntilElementFound } from '../helpers/methods';
 
 dotenv.config({ path: 'properties.env' });
 
-export class votingAndLinksPage {
+export class VotingAndLinksPage {
   readonly page: Page;
-  readonly votingLinks: Locator[];
-  readonly voteButton: Locator;
+  votingLinks: string[];
+  voteButton: Locator;
+  agreeBox: Locator;
+  steamImage: Locator;
+  signInText: Locator;
+  usernameInput: Locator;
+  passwordInput: Locator;
+  signInButton: Locator;
+  steamMobileAppText: Locator;
+  steamSignInButton: Locator;
+  steamUserID: Locator;
+  voteConfirmation: Locator;
+  infoWarningLocator: Locator;
 
   constructor(page: Page) {
     this.page = page;
-    this.votingLinks = [
-      page.locator('a', { hasText: 'https://rust-servers.net/server/151475/' }),
-      page.locator('a', { hasText: 'https://rust-servers.net/server/151790/' }),
-      page.locator('a', { hasText: 'https://rust-servers.net/server/151562/' }),
-    ];
+    this.votingLinks = [];
     this.voteButton = page.locator('//a[@class="btn btn-success mr-1 my-1" and @role="button" and @title="Vote"]');
+    this.agreeBox = page.locator('#accept');
+    this.steamImage = page.locator('input[type="image"]');
+    this.signInText = page.locator('div.g5L61o-ZrHHmwLEugLjLI:has-text("Sign in")');
+    this.usernameInput = page
+      .locator('form')
+      .filter({ hasText: 'Sign in with account' })
+      .locator('input[type="text"]');
+    this.passwordInput = page.locator('input[type="password"]');
+    this.signInButton = page.locator('button.DjSvCZoKKfoNSmarsEcTS[type="submit"]');
+    this.steamMobileAppText = page.locator('div._2WgwHabhUV3cP6dHQPybw8:has-text("Use the Steam Mobile App to confirm your sign in...")');
+    this.steamSignInButton = page.locator('//input[@class="btn_green_white_innerfade" and @type="submit"]');
+    this.steamUserID = page.locator('div.OpenID_loggedInName:has-text("Gary_Oak")');
+    this.voteConfirmation = page.locator('h1:has-text("Vote Confirmation")');
+    this.infoWarningLocator = this.page.locator('div.alert.alert-info[role="alert"]');
   }
 
-  async goto() {
-    await this.page.goto('https://rust.paradiseisland.gg/links', { timeout: 60000 });
+  /**
+   * Loads voting links from a file into the votingLinks array.
+   * @param filePath - The path to the text file.
+   */
+  async loadLinksFromFile(filePath: string): Promise<void> {
+    this.votingLinks = await loadVotingLinks(filePath);
+    console.log('Loaded voting links:', this.votingLinks);
+  }
+  
+  /**
+   * Navigates to the specified URL or a default voting page.
+   * @param url Optional URL to navigate to.
+   */
+  async goto(url?: string): Promise<void> {
+    const targetUrl = url || 'https://rust.paradiseisland.gg/links';
+    await this.page.goto(targetUrl, { timeout: 60000 });
   }
 
-  // Function to refresh a tab until the target element is found
-  async refreshUntilElementFound(tab: Page, targetLocator: string, timeout: number = 60000) {
-      const startTime = Date.now();
-  
-      while (Date.now() - startTime < timeout) {
-        try {
-          // Reload the page
-          await tab.reload({ waitUntil: 'load' });
-          
-          // Wait for the target element to be visible
-          await tab.locator(targetLocator).waitFor({ state: 'visible', timeout: 5000 });
-          console.log("Found the element!");
-          return;
-        } catch (error) {
-          console.log("Element not found yet, retrying...");
-          await tab.waitForTimeout(3000); // Wait a short time before next retry
-        }
-      }
-  
-      throw new Error(`Timeout reached. Element not found within ${timeout / 1000} seconds.`);
-    }
-
-  async openLinksAndClickVote() {
-    // Open the first link (this is where we will sign in)
-    const [firstTab] = await Promise.all([
-      this.page.context().waitForEvent('page'), // Wait for the first new tab
-      this.votingLinks[0].click(), // Click the first link
-    ]);
-
-    // Focus on the first tab for sign-in
-    await firstTab.bringToFront();
-
-    // Click the "Vote" button, check the accept box, and click on the Steam image
-    const voteButton = firstTab.locator('//a[@class="btn btn-success mr-1 my-1" and @role="button" and @title="Vote"]');
-    const agreeBox = firstTab.locator('#accept');
-    const steamImage = firstTab.locator('input[type="image"]');
-
+  /**
+   * Performs the common voting actions:
+   * - Clicks the vote button
+   * - Checks the acceptance checkbox
+   * - Clicks the Steam sign-in image
+   * @param tab - The page (or tab) where these actions occur.
+   */
+  async clickVoteFlow(tab: Page): Promise<void> {
+    const voteButton = tab.locator('//a[@class="btn btn-success mr-1 my-1" and @role="button" and @title="Vote"]');
     await voteButton.waitFor({ state: 'visible', timeout: 5000 });
-    await voteButton.click(); // Click the vote button
+    await voteButton.click();
 
+    const agreeBox = tab.locator('#accept');
     await agreeBox.waitFor({ state: 'visible', timeout: 5000 });
-    await agreeBox.check(); // Check the accept checkbox
+    await agreeBox.check();
 
+    const steamImage = tab.locator('input[type="image"]');
     await steamImage.waitFor({ state: 'visible', timeout: 5000 });
-    await steamImage.click(); // Click the Steam sign-in button
+    await steamImage.click();
+  }
 
-    // Wait for the sign-in page to show (this assumes the text "Sign in" appears after Steam authentication)
-    const signInText = firstTab.locator('div.g5L61o-ZrHHmwLEugLjLI:has-text("Sign in")');
-    await expect(signInText).toBeVisible({ timeout: 5000 });
+  /**
+   * Handles the sign-in flow on the provided tab.
+   * @param tab - The page where sign-in is performed.
+   */
+  async signIn(tab: Page): Promise<void> {
+    // Perform the common voting actions first.
+    await this.clickVoteFlow(tab);
 
-    // Fill in the username and password
+    // Wait for the sign-in form to be visible.
+    await expect(this.signInText).toBeVisible({ timeout: 5000 });
+
+    // Fill in credentials.
     const userName = process.env.USER_NAME || '';
     const password = process.env.PASSWORD || '';
-    const usernameInput = firstTab.locator('form').filter({ hasText: 'Sign in with account' }).locator('input[type="text"]');
-    const passwordInput = firstTab.locator('input[type="password"]');
+    await this.usernameInput.fill(userName);
+    await this.passwordInput.fill(password);
 
-    await usernameInput.fill(userName);
-    await passwordInput.fill(password);
+    // Click the sign-in button.
+    await this.signInButton.waitFor({ state: 'visible', timeout: 5000 });
+    await this.signInButton.click();
 
-    // Locate and click the "Sign in" button
-    const signInButton = firstTab.locator('button.DjSvCZoKKfoNSmarsEcTS[type="submit"]');
-    await signInButton.waitFor({ state: 'visible', timeout: 5000 });
-    await signInButton.click(); // Click the Sign in button
+    // Wait for Steam Mobile App confirmation text.
+    await expect(this.steamMobileAppText).toBeVisible({ timeout: 30000 });
+    console.log("Steam Mobile App Text Displayed! Open Your Phone!");
+    await expect(this.steamUserID).toBeVisible({ timeout: 30000 });
+    await this.steamSignInButton.waitFor({ state: 'visible', timeout: 5000 });
+    await this.steamSignInButton.click();
 
-    // Wait for the confirmation text that instructs to use the Steam Mobile App
-    const steamMobileAppTextLocator = firstTab.locator('div._2WgwHabhUV3cP6dHQPybw8:has-text("Use the Steam Mobile App to confirm your sign in...")');
-    await expect(steamMobileAppTextLocator).toBeVisible({ timeout: 25000 });
 
-    // Now that the first tab is signed in, reload the other tabs
-    for (let i = 1; i < this.votingLinks.length; i++) {
-      const [newTab] = await Promise.all([
-        this.page.context().waitForEvent('page'),
-        this.votingLinks[i].click(),
-      ]);
-
-      // Focus on the new tab
-      await newTab.bringToFront();
-
-      // Wait for the page to load completely (adjust wait conditions as needed)
-      await newTab.waitForLoadState('load');
-
-      // Reload the tab to inherit the session from the signed-in first tab
-      await newTab.reload({ waitUntil: 'load' });
-
-      // After the tab reloads, you can interact with the "Vote" button or perform other actions
-      const voteButton = newTab.locator('//a[@class="btn btn-success mr-1 my-1" and @role="button" and @title="Vote"]');
-      await voteButton.waitFor({ state: 'visible', timeout: 5000 });
-      await voteButton.click();
-      const agreeBox = newTab.locator('#accept');
-      const steamImage = newTab.locator('input[type="image"]');
-
-      await agreeBox.waitFor({ state: 'visible', timeout: 5000 });
-      await agreeBox.check(); // Check the accept checkbox
-
-      await steamImage.waitFor({ state: 'visible', timeout: 5000 });
-      await steamImage.click(); // Click the Steam sign-in button
-
-      await this.refreshUntilElementFound(newTab, 'h2:has-text("By signing into rust-servers.net through Steam:")');
+    // Check for an error message and refresh if necessary.
+    if (await tab.locator('#error_display').isVisible()) {
+      console.log("Error displayed. Refreshing until confirmation appears.");
+      await refreshUntilElementFound(tab, 'h2:has-text("By signing into rust-servers.net through Steam:")');
+    } else if (await this.voteConfirmation.isVisible()) {
+      await expect(tab.locator('h1:has-text("Vote Confirmation")')).toBeVisible({ timeout: 5000 });
+      console.log("Vote Confirmed!");
+    } else if (await this.infoWarningLocator.isVisible()) {
+      const infoText = await this.infoWarningLocator.innerText();
+      console.log('Info Warning Message:', infoText);
     }
   }
 
-  async clickVote() {
+  /**
+   * Opens the voting links from a file, handles the Steam sign-in on the first link,
+   * and then repeats the voting steps for subsequent links in new tabs.
+   */
+  async openLinksAndClickVote(): Promise<void> {
+    if (!this.votingLinks || this.votingLinks.length === 0) {
+      throw new Error("No voting links loaded.");
+    }
+
+    // Open the first voting link to perform sign-in.
+    await this.page.goto(this.votingLinks[0], { timeout: 60000 });
+    // Use the current page as the first tab.
+    const firstTab = this.page;
+    await this.signIn(firstTab);
+    // Optionally wait for the Steam confirmation element after sign-in.
+    // await refreshUntilElementFound(firstTab, 'h2:has-text("By signing into rust-servers.net through Steam:")');
+
+    // Process the remaining voting links.
+    for (let i = 1; i < this.votingLinks.length; i++) {
+      const link = this.votingLinks[i];
+      // Create a new tab (page) for each additional link.
+      const newTab = await this.page.context().newPage();
+      await newTab.goto(link, { waitUntil: 'load', timeout: 60000 });
+      // Optionally, reload the tab to ensure the session is carried over.
+      await newTab.reload({ waitUntil: 'load' });
+      
+      // Perform the common voting actions.
+      await this.clickVoteFlow(newTab);
+      
+      // Wait for the Steam confirmation element to appear.
+      await refreshUntilElementFound(newTab, 'h2:has-text("By signing into rust-servers.net through Steam:")');
+      
+      await this.handleVoteStatus(newTab);
+
+    }
+  }
+
+  /**
+ * Handles different vote statuses on the provided tab:
+ * - Checks for an error message and refreshes if necessary.
+ * - Confirms successful voting.
+ * - Logs informational warnings about voting cooldowns.
+ * @param tab - The page/tab where the vote status should be checked.
+ */
+  async handleVoteStatus(tab: Page): Promise<void> {
+    // Check for an error message
+    if (await tab.locator('#error_display').isVisible()) {
+      console.log("❌ Error displayed. Refreshing until confirmation appears.");
+      await refreshUntilElementFound(tab, 'h2:has-text("By signing into rust-servers.net through Steam:")');
+    } 
+    // Check for vote confirmation
+    else if (await this.voteConfirmation.isVisible()) {
+      await expect(tab.locator('h1:has-text("Vote Confirmation")')).toBeVisible({ timeout: 5000 });
+      console.log("✅ Vote Confirmed!");
+    } 
+    // Check for info warning
+    else if (await this.infoWarningLocator.isVisible()) {
+      const infoText = await this.infoWarningLocator.innerText();
+      console.log('ℹ️ Info Warning Message:', infoText);
+    } 
+    // No visible status detected
+    else {
+      console.log("⚠️ No visible vote status detected.");
+    }
+  }
+
+
+  /**
+   * Initiates the complete voting process.
+   */
+  async vote(): Promise<void> {
     await this.openLinksAndClickVote();
   }
 }
