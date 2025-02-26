@@ -4,6 +4,9 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 properties.env
-/urls/
 RustVote.code-workspace
 tests-examples
+testData/links.txt
+/allure-report/
+/allure-results/
+package-lock.json

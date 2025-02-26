@@ -1,15 +1,22 @@
 {
-  "name": "jakes practice",
+  "name": "jakes-practice",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "test": "npx playwright test",
+    "test:allure": "npm run test && npm run allure:report",
+    "allure:report": "npx allure generate allure-results -o allure-report --clean",
+    "allure:open": "npx allure open allure-report"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@playwright/test": "^1.49.1",
-    "@types/node": "^22.10.5"
+    "@types/node": "^22.10.5",
+    "allure-commandline": "^2.32.2",
+    "allure-playwright": "^3.2.0"
   },
   "dependencies": {
     "dotenv": "^16.4.7"

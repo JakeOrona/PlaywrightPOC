@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs';
-import { Page } from '@playwright/test'; // Ensure you import Page from Playwright
+import { Page, expect } from '@playwright/test';
 
 export interface LinkData {
   [key: string]: string;
@@ -36,33 +36,76 @@ export async function loadVotingLinks(filePath: string): Promise<string[]> {
 }
 
 /**
- * Refreshes a page until the target element is found or a timeout is reached.
- * @param tab - The Playwright Page instance.
- * @param targetLocator - The selector for the target element.
- * @param timeout - Maximum time in milliseconds to wait (default is 60000).
- * @returns A promise that resolves when the element is found, or rejects if the timeout is reached.
+ * Centers text within a fixed-width box.
+ * @param text - The text to be centered.
+ * @param width - The total width of the output.
+ * @returns A centered string with equal padding.
  */
-export async function refreshUntilElementFound(
-  tab: Page,
-  targetLocator: string,
-  timeout: number = 60000
-): Promise<void> {
-  const startTime = Date.now();
+export const centerText = (text: string, width: number): string => {
+  const padding = Math.max(0, width - text.length);
+  const leftPad = Math.floor(padding / 2);
+  const rightPad = padding - leftPad;
+  return " ".repeat(leftPad) + text + " ".repeat(rightPad);
+};
 
-  while (Date.now() - startTime < timeout) {
-    try {
-      // Reload the page and wait until the page load event fires
-      await tab.reload({ waitUntil: 'load' });
-      
-      // Wait for the target element to become visible (with a short timeout for each try)
-      await tab.locator(targetLocator).waitFor({ state: 'visible', timeout: 5000 });
-      console.log("Found the element!");
-      return;
-    } catch (error) {
-      console.log("Element not found yet, retrying...");
-      await tab.waitForTimeout(3000); // Wait a short time before the next retry
-    }
+/**
+ * Ensures text fits within a fixed width by padding or truncating.
+ * @param text - The text to format.
+ * @param width - The total width of the content inside the box (excluding borders).
+ * @returns A formatted string with consistent length.
+ */
+export const formatText = (text: string, width: number): string => {
+  if (text.length > width) {
+      return text.substring(0, width - 3) + "..."; // Truncate if too long
+  }
+  return text.padEnd(width, " "); // Pad with spaces if too short
+};
+
+/**
+ * Handles vote status and formats output for consistent display.
+ * @param headingText - The page heading (e.g., server name).
+ * @param voteConfirmed - Whether the vote was confirmed.
+ * @param dailyLimitText - The "You have reached your daily vote limit" text.
+ * @param nextVoteText - The cooldown message (e.g., next vote available time).
+ * @returns The formatted vote result as a string
+ */
+export function handleVoteFormatting(
+  headingText: string,
+  voteConfirmed: boolean,
+  dailyLimitText?: string,
+  nextVoteText?: string
+): string {
+  const MAX_WIDTH = 70; // Box width including borders
+  const CONTENT_WIDTH = MAX_WIDTH - 4; // Inner text width (excluding "│ ")
+  const resultLines: string[] = []; // Array to store all results
+
+  // Function to format multi-line text correctly
+  const formatMultiLineText = (text: string): string[] => {
+    return text.split("\n").map(line => formatText("🕒 " + line.trim(), CONTENT_WIDTH));
+  };
+
+  // Top border
+  resultLines.push(`┌${"─".repeat(MAX_WIDTH - 2)}┐`);
+  resultLines.push(`| ${formatText(`Checking ${headingText}`, CONTENT_WIDTH)} |`);
+
+  if (voteConfirmed) {
+    // ✅ Case 1: Vote Confirmed (No warnings)
+    resultLines.push(`│ ${formatText("✅ Vote Confirmed!", CONTENT_WIDTH)} │`);
+  } else if (dailyLimitText && nextVoteText) {
+    // ⚠️ Case 2: Daily Vote Limit Reached
+    resultLines.push(`│ ${formatText("⚠️ " + dailyLimitText, CONTENT_WIDTH)} │`);
+    
+    // Process nextVoteText with 🕒 added per line
+    const formattedLines = formatMultiLineText(nextVoteText);
+    formattedLines.forEach(line => resultLines.push(`│ ${line} │`));
+  } else {
+    // 🚫 Case 3: No Vote Status
+    resultLines.push(`│ ${formatText("🚫 No visible vote status detected.", CONTENT_WIDTH)} │`);
   }
 
-  throw new Error(`Timeout reached. Element not found within ${timeout / 1000} seconds.`);
+  // Bottom border
+  resultLines.push(`└${"─".repeat(MAX_WIDTH - 2)}┘\n`);
+
+  // ✅ Store in the results array
+  return resultLines.join("\n");
 }
