@@ -89,7 +89,7 @@ PlaywrightPOC/
 │-- tests/                   # Test specs
 │-- pageObjects/             # Page Object Model files
 │-- helpers/                 # Utility & helper functions
-│-- testData/                # External test data
+│-- testData/                # External test data (ignored in Git)
 │-- reports/                 # Allure & Playwright reports
 │-- playwright.config.ts     # Playwright global config
 │-- package.json             # Project dependencies & scripts
