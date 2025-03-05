@@ -1,7 +1,7 @@
 // @ts-check
 
 import { VotingAndLinksPage } from '../pageObjects/paradiseIslandLinks';
-import { test } from '@playwright/test';
+import { test } from './../utilities/fixture';
 import path from 'path';
 
 // Array to store formatted vote results

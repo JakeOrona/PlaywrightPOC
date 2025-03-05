@@ -262,6 +262,8 @@ async clickVoteFlow(tab: Page): Promise<void> {
         }
     });
 
+    const timestamp = new Date().toISOString().replace(/:/g, "-");
+    await tab.screenshot({ path: `./test-results/screenshot-${timestamp}.png` });
     return handleVoteFormatting(headingText, voteConfirmed, dailyLimitText, nextVoteText);
   }
 }
