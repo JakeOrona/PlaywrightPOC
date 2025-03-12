@@ -249,10 +249,10 @@ async clickVoteFlow(tab: Page): Promise<void> {
     let nextVoteText: string | undefined = undefined;
 
     const dailyVoteLimitLocator = tab.getByText("You have reached your daily");
-    const infoWarningLocator = tab.locator('div.alert.alert-info[role="alert"]');
+    const infoWarningLocator = tab.getByText('You will be able to vote');
 
     await test.step("Check for vote limit warning", async () => {
-        if (await infoWarningLocator.isVisible() && await dailyVoteLimitLocator.isVisible()) {
+        if (await dailyVoteLimitLocator.isVisible()) {
             dailyLimitText = await dailyVoteLimitLocator.innerText();
             nextVoteText = (await infoWarningLocator.innerText()).trim();
             console.log(`⚠️ -Daily Vote Limit Reached: ${dailyLimitText}`);
