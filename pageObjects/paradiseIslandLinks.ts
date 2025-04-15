@@ -51,7 +51,7 @@ export class VotingAndLinksPage {
    * @param url Optional URL to navigate to.
    */
   async goToHomePage(url?: string): Promise<void> {
-    const targetUrl = url || "https://rust.paradiseisland.gg/links";
+    const targetUrl = url || "https://google.com";
     console.log(`🌍 -Navigating to homepage: ${targetUrl}`);
     await test.step(`Navigate to ${targetUrl}`, async () => {
         await this.page.goto(targetUrl, { timeout: 60000 });
@@ -110,7 +110,7 @@ async clickVoteFlow(tab: Page): Promise<void> {
 
     // Wait for the sign-in form to be visible.
     await test.step("Wait for Steam sign-in page", async () => {
-        await expect(this.signInText).toBeVisible({ timeout: 5000 });
+        await expect(this.signInText).toBeVisible({ timeout: 8000 });
         console.log("👍 -Steam sign-in page is visible.");
     });
 
@@ -120,7 +120,7 @@ async clickVoteFlow(tab: Page): Promise<void> {
         const password = process.env.PASSWORD || "";
         await this.usernameInput.fill(userName);
         await this.passwordInput.fill(password);
-        await this.signInButton.waitFor({ state: "visible", timeout: 5000 });
+        await this.signInButton.waitFor({ state: "visible", timeout: 8000 });
         await this.signInButton.click();
         console.log("🔑 -Entered credentials and submitted login.");
     });
@@ -130,7 +130,7 @@ async clickVoteFlow(tab: Page): Promise<void> {
         console.log("\x1b[31m" + "========================================" + "\x1b[0m");
         console.log("\x1b[33m⚠️  Steam Mobile App login detected! Open your phone NOW to approve sign-in. ⚠️\x1b[0m");
         console.log("\x1b[31m" + "========================================" + "\x1b[0m");
-        await expect(this.steamMobileAppText).toBeVisible({ timeout: 30000 });
+        await expect(this.steamMobileAppText).toBeVisible({ timeout: 40000 });
     });
 
     // Get Steam User ID and Sign-in Button
@@ -143,7 +143,7 @@ async clickVoteFlow(tab: Page): Promise<void> {
     // Click Steam sign-in button.
     await test.step("Complete Steam sign-in", async () => {
         console.log("🤳 -Steam Mobile App confirmation detected.");
-        await expect(steamSignInButton).toBeVisible({ timeout: 30000 });
+        await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
         console.log("🙋‍♂️ -Steam user ID and sign-in button are visible.");
         await expect(steamUserID).toHaveText("Gary_Oak", { timeout: 45000 });
         console.log("👌 -Verified Steam ID is correct.");
@@ -207,8 +207,8 @@ async clickVoteFlow(tab: Page): Promise<void> {
         const steamSignInButton = newTab.getByRole('button', { name: 'Sign In' });
 
         // Asserstions before clicking
-        await expect(steamUserID).toBeVisible({ timeout: 30000 });
-        await expect(steamSignInButton).toBeVisible({ timeout: 30000 });
+        await expect(steamUserID).toBeVisible({ timeout: 40000 });
+        await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
         await steamSignInButton.click({ force: true });
         console.log(`🔑 -Steam sign-in completed.`);
       });
@@ -249,7 +249,7 @@ async clickVoteFlow(tab: Page): Promise<void> {
     let nextVoteText: string | undefined = undefined;
 
     const dailyVoteLimitLocator = tab.getByText("You have reached your daily");
-    const infoWarningLocator = tab.getByText('You will be able to vote');
+    const infoWarningLocator = tab.getByText('You will be able to vote');-
 
     await test.step("Check for vote limit warning", async () => {
         if (await dailyVoteLimitLocator.isVisible()) {

@@ -15,9 +15,9 @@ test('Open all links and vote', async ({ page }) => {
       await votingPage.loadLinksFromFile(filePath);
   });
 
-  await test.step('Navigate to rust.paradiseisland.gg/links', async () => {
+  /* await test.step('Navigate to rust.paradiseisland.gg/links', async () => {
       await votingPage.goToHomePage();
-  });
+  }); */
 
   await test.step('Process all voting links and vote', async () => {
       voteResults = await votingPage.processVotingLinks();
