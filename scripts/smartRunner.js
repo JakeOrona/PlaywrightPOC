@@ -58,7 +58,7 @@ async function clearAuthState() {
  */
 async function runSmartTests() {
     try {
-        console.log('🎯 -Starting smart test runner...');
+        console.log('🎯 -Starting auth test runner...');
         
         const authIsValid = await isAuthStateValid();
         
