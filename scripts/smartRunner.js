@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const AUTH_FILE_PATH = 'playwright/.auth/user.json';
-const AUTH_VALIDITY_HOURS = 36;
+const AUTH_VALIDITY_HOURS = 27; // Set the validity period for the auth state in hours
 
 /**
  * Checks if the stored authentication state exists and is less than 36 hours old
