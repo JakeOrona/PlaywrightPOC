@@ -101,7 +101,7 @@ async clickVoteFlow(tab: Page): Promise<void> {
     let steamUserID: Locator;
     let steamSignInButton: Locator;
 
-    console.log("▶️ -Initiating Steam sign-in process...");
+    console.log("▶️ -Initiating sign-in process...");
     // Perform the common voting actions first.
     await test.step("Perform voting actions", async () => {
         await this.clickVoteFlow(tab);

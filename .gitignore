@@ -3,6 +3,7 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/playwright/.auth/
 properties.env
 RustVote.code-workspace
 tests-examples
