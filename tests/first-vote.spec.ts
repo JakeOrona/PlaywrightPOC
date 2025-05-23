@@ -18,16 +18,16 @@ test('vote on first server using saved authentication', async ({ page }) => {
     
     console.log(`📌 -Checking first server vote status: ${votingLinks[0]}`);
     
-    // Check if first vote was already completed during authentication setup
+    // Check if first vote was already completed during authentication setup in this test run
     const firstVoteCompleted = await isFirstVoteCompleted();
     
     if (firstVoteCompleted) {
-        console.log('✅ -First server vote was already completed during authentication setup');
+        console.log('✅ -First server vote was already completed during authentication setup in this run');
         console.log('🎯 -Skipping redundant first server vote');
         return;
     }
     
-    console.log('🗳️ -First server vote not yet completed, proceeding with vote...');
+    console.log('🗳️ -First server vote not yet completed in this run, proceeding with vote...');
     
     // Navigate to first voting link
     await page.goto(votingLinks[0], { timeout: 60000 });

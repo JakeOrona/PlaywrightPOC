@@ -46,8 +46,9 @@ export async function isAuthStateValid(): Promise<boolean> {
 }
 
 /**
- * Checks if the first vote was completed during the current authentication session
- * @returns Promise<boolean> - true if first vote was already completed, false otherwise
+ * Checks if the first vote was completed during the current test run session
+ * This flag is only valid for the current test execution, not across multiple runs
+ * @returns Promise<boolean> - true if first vote was already completed in this run, false otherwise
  */
 export async function isFirstVoteCompleted(): Promise<boolean> {
     try {
@@ -57,6 +58,10 @@ export async function isFirstVoteCompleted(): Promise<boolean> {
             return false;
         }
 
+        // Read flag content to check if it's for the current test run
+        const flagContent = await fs.readFile(AUTH_FLAG_PATH, 'utf-8');
+        const flagData = JSON.parse(flagContent);
+        
         // Check if the flag file is newer than or same age as the auth file
         const [flagStats, authStats] = await Promise.all([
             fs.stat(AUTH_FLAG_PATH),
@@ -72,12 +77,13 @@ export async function isFirstVoteCompleted(): Promise<boolean> {
         const flagAge = flagStats.mtime.getTime();
         const authAge = authStats.mtime.getTime();
         
-        const isCompleted = flagAge >= authAge;
+        // Flag is only valid if it's from the same auth session AND the same test run
+        const isCompleted = flagAge >= authAge && flagData.runId === process.env.PLAYWRIGHT_RUN_ID;
         
         if (isCompleted) {
-            console.log('✅ -First vote already completed in current auth session');
+            console.log('✅ -First vote already completed in current test run session');
         } else {
-            console.log('🔍 -First vote flag is older than auth, needs new vote');
+            console.log('🔍 -First vote flag is from different run or auth session, needs new vote');
         }
 
         return isCompleted;
@@ -88,20 +94,32 @@ export async function isFirstVoteCompleted(): Promise<boolean> {
 }
 
 /**
- * Marks that the first vote has been completed in the current authentication session
+ * Marks that the first vote has been completed in the current test run session
  */
 export async function markFirstVoteCompleted(): Promise<void> {
     try {
         await ensureAuthDirectoryExists();
-        await fs.writeFile(AUTH_FLAG_PATH, new Date().toISOString());
-        console.log('🏁 -Marked first vote as completed for current auth session');
+        
+        // Create a unique run ID for this test execution if it doesn't exist
+        if (!process.env.PLAYWRIGHT_RUN_ID) {
+            process.env.PLAYWRIGHT_RUN_ID = Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        const flagData = {
+            timestamp: new Date().toISOString(),
+            runId: process.env.PLAYWRIGHT_RUN_ID,
+            completedDuringAuth: true
+        };
+        
+        await fs.writeFile(AUTH_FLAG_PATH, JSON.stringify(flagData, null, 2));
+        console.log('🏁 -Marked first vote as completed for current test run session');
     } catch (error) {
         console.error('❌ -Error marking first vote as completed:', error);
     }
 }
 
 /**
- * Clears the first vote completion flag
+ * Clears the first vote completion flag to allow fresh voting in new test runs
  */
 export async function clearFirstVoteFlag(): Promise<void> {
     try {
@@ -110,6 +128,23 @@ export async function clearFirstVoteFlag(): Promise<void> {
     } catch (error) {
         // File might not exist, which is fine
         console.log('🔍 -No first vote flag to clear');
+    }
+}
+
+/**
+ * Initializes a new test run by clearing the first vote flag
+ * This ensures each test execution can vote on all servers
+ */
+export async function initializeTestRun(): Promise<void> {
+    try {
+        // Generate a unique run ID for this test execution
+        process.env.PLAYWRIGHT_RUN_ID = Date.now().toString() + '-' + Math.random().toString(36).substr(2, 9);
+        
+        // Clear any existing first vote flag from previous runs
+        await clearFirstVoteFlag();
+        console.log(`🚀 -Initialized new test run with ID: ${process.env.PLAYWRIGHT_RUN_ID}`);
+    } catch (error) {
+        console.error('❌ -Error initializing test run:', error);
     }
 }
 
