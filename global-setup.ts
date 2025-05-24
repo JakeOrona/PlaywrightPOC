@@ -1,12 +1,8 @@
 // global-setup.ts
 import { isAuthStateValid } from './helpers/authHelpers';
-import { clearVoteResults } from './helpers/resultsCollector';
 
 async function globalSetup() {
     console.log('🚀 -Running global setup...');
-    
-    // Clear any previous vote results at the start of a new test run
-    await clearVoteResults();
     
     const authIsValid = await isAuthStateValid();
     

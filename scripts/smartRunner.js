@@ -5,6 +5,7 @@ const path = require('path');
 
 const AUTH_FILE_PATH = 'playwright/.auth/user.json';
 const AUTH_VALIDITY_HOURS = 27;
+const RESULTS_FILE_PATH = 'test-results/vote-results.json';
 
 /**
  * Checks if the stored authentication state exists and is less than 36 hours old
@@ -54,6 +55,19 @@ async function clearAuthState() {
 }
 
 /**
+ * Clears all vote results (call at start of new test run)
+ */
+async function clearVoteResults() {
+    try {
+        await fs.unlink(RESULTS_FILE_PATH);
+        console.log('🗑️ -Cleared previous vote results');
+    } catch {
+        // File doesn't exist, which is fine
+        console.log('🔍 -No previous vote results to clear');
+    }
+}
+
+/**
  * Smart test runner that ensures authentication and runs all voting tests
  */
 async function runSmartTests() {
@@ -61,6 +75,9 @@ async function runSmartTests() {
         console.log('\n🎯 ══════════════════════════════════════════════════════════════════════════════');
         console.log('║                           SMART TEST RUNNER STARTING                        ║');
         console.log('══════════════════════════════════════════════════════════════════════════════');
+        
+        // Clear results at the start of each smart test run
+        await clearVoteResults();
         
         const authIsValid = await isAuthStateValid();
         
@@ -99,6 +116,8 @@ async function forceAuthentication() {
         console.log('║                         FORCING FRESH AUTHENTICATION                        ║');
         console.log('══════════════════════════════════════════════════════════════════════════════');
         
+        // Clear results at the start of forced auth
+        await clearVoteResults();
         await clearAuthState();
         console.log('\n🗑️ Cleared existing authentication state');
         
