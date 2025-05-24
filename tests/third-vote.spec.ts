@@ -4,11 +4,11 @@ import { VotingAndLinksPage } from '../pageObjects/paradiseIslandLinks';
 import { loadVotingLinks } from '../helpers/methods';
 import { isAuthStateValid } from '../helpers/authHelpers';
 import { addVoteResult } from '../helpers/resultsCollector';
-import { logSectionHeader, logStep, logSuccess, logWarning } from '../helpers/loggingHelpers';
+import { logBanner, logStep, logSuccess, logWarning } from '../helpers/loggingHelpers';
 import path from 'path';
 
 test('vote on third server using saved authentication', async ({ page }) => {
-    logSectionHeader('THIRD SERVER VOTING', '🎯');
+    logBanner('THIRD SERVER VOTING', '🎯');
     
     const votingPage = new VotingAndLinksPage(page);
     const filePath = path.resolve(__dirname, '../testData/links.txt');
@@ -38,7 +38,6 @@ test('vote on third server using saved authentication', async ({ page }) => {
             // Perform full Steam sign-in if auth is invalid
             voteResult = await votingPage.signIn(page);
             logSuccess('Third server vote completed with fresh authentication');
-            console.log(voteResult);
         } else {
             // If auth is valid, proceed with simplified flow
             logSuccess('Using existing valid authentication');
@@ -60,7 +59,6 @@ test('vote on third server using saved authentication', async ({ page }) => {
             // Check vote status and log results
             voteResult = await votingPage.handleVoteStatus(page);
             logSuccess('Third server vote completed with stored auth');
-            console.log(voteResult);
         }
         
     } catch (error) {
@@ -68,7 +66,6 @@ test('vote on third server using saved authentication', async ({ page }) => {
         // Fall back to full authentication if anything goes wrong
         voteResult = await votingPage.signIn(page);
         logSuccess('Third server vote completed with fallback authentication');
-        console.log(voteResult);
     }
     
     // Extract server name from page if possible
@@ -79,6 +76,6 @@ test('vote on third server using saved authentication', async ({ page }) => {
         // Keep default name if extraction fails
     }
     
-    // Save result for summary
+    // Save result for summary (don't display here)
     await addVoteResult(votingLinks[2], serverName, voteResult);
 });

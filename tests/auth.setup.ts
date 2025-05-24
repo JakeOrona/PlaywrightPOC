@@ -3,6 +3,7 @@ import { test as setup } from '@playwright/test';
 import { VotingAndLinksPage } from '../pageObjects/paradiseIslandLinks';
 import { loadVotingLinks } from '../helpers/methods';
 import { isAuthStateValid, ensureAuthDirectoryExists, clearAuthState, getAuthFilePath, markFirstVoteCompleted } from '../helpers/authHelpers';
+import { addVoteResult } from '../helpers/resultsCollector';
 import path from 'path';
 
 setup('ensure valid authentication state', async ({ page }) => {
@@ -42,8 +43,19 @@ setup('ensure valid authentication state', async ({ page }) => {
     
     // Perform Steam sign-in and vote (needed to complete the auth flow)
     const voteResult = await votingPage.signIn(page);
-    console.log('✅ -Authentication completed. Vote result from auth setup:');
-    console.log(voteResult);
+    console.log('✅ -Steam signin completed.');
+    
+    // Extract server name for the result
+    let serverName = 'First Server';
+    try {
+        const heading = await page.locator('h1').first().innerText();
+        serverName = heading || 'First Server';
+    } catch {
+        // Keep default name if extraction fails
+    }
+    
+    // Save the vote result for the final summary
+    await addVoteResult(votingLinks[0], serverName, voteResult);
     
     // Save the authentication state
     const authFile = getAuthFilePath();

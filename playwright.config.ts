@@ -21,6 +21,7 @@ export default defineConfig({
     reporter: [
         ['html', { outputFolder: 'playwright-report', open: 'never' }],
         ['allure-playwright', { outputFolder: 'allure-results' }],
+        ['list'], // Add list reporter for cleaner parallel output
     ],
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
@@ -73,17 +74,6 @@ export default defineConfig({
             },
             dependencies: [], // No dependencies when auth is valid
             testMatch: '**/third-vote.spec.ts',
-        },
-        // Fallback sequential project for when fresh auth is needed
-        {
-            name: 'sequential-fallback',
-            use: { 
-                ...devices['Desktop Chrome'],
-                storageState: 'playwright/.auth/user.json'
-            },
-            dependencies: [],
-            testMatch: ['**/first-vote.spec.ts', '**/second-vote.spec.ts', '**/third-vote.spec.ts'],
-            fullyParallel: false, // Run sequentially for fresh auth scenarios
         }
     ],
 });

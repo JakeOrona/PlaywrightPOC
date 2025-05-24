@@ -1,7 +1,7 @@
 import {test, expect, type Locator, type Page } from '@playwright/test';
 import dotenv from 'dotenv';
 import { loadVotingLinks, handleVoteFormatting } from '../helpers/methods';
-import { logSectionHeader, logSubsectionHeader, logStep, logSuccess, logWarning, logDivider } from '../helpers/loggingHelpers';
+import { logBanner, logSubsectionHeader, logStep, logSuccess, logWarning, logDivider } from '../helpers/loggingHelpers';
 
 dotenv.config({ path: 'properties.env' });
 
@@ -103,7 +103,7 @@ export class VotingAndLinksPage {
         let steamUserID: Locator;
         let steamSignInButton: Locator;
 
-        logSubsectionHeader("Steam Authentication Process", "🔐");
+        logBanner("Steam Authentication Process", "🔐");
 
         // Perform the common voting actions first.
         await test.step("Perform voting actions", async () => {
@@ -257,8 +257,7 @@ export class VotingAndLinksPage {
             if (await dailyVoteLimitLocator.isVisible()) {
                 dailyLimitText = await dailyVoteLimitLocator.innerText();
                 nextVoteText = (await infoWarningLocator.innerText()).trim();
-                logWarning(`Daily Vote Limit Reached: ${dailyLimitText}`);
-                logStep(`Next Vote Available: ${nextVoteText}`, '🕒');
+                logWarning(`Daily Vote Limit Reached`);
             } else {
                 logSuccess("No vote limit warning detected");
             }

@@ -2,13 +2,13 @@
 import { test, expect } from '@playwright/test';
 import { VotingAndLinksPage } from '../pageObjects/paradiseIslandLinks';
 import { loadVotingLinks } from '../helpers/methods';
-import { isAuthStateValid, getAuthFilePath } from '../helpers/authHelpers';
+import { isAuthStateValid, getAuthFilePath, isFirstVoteCompleted } from '../helpers/authHelpers';
 import { addVoteResult } from '../helpers/resultsCollector';
-import { logSectionHeader, logStep, logSuccess, logWarning } from '../helpers/loggingHelpers';
+import { logBanner, logStep, logSuccess, logWarning, logInfo } from '../helpers/loggingHelpers';
 import path from 'path';
 
 test('vote on first server with authentication handling', async ({ page }) => {
-    logSectionHeader('FIRST SERVER VOTING', '🎯');
+    logBanner('FIRST SERVER VOTING', '🎯');
     
     const votingPage = new VotingAndLinksPage(page);
     const filePath = path.resolve(__dirname, '../testData/links.txt');
@@ -18,6 +18,34 @@ test('vote on first server with authentication handling', async ({ page }) => {
     
     if (!votingLinks || votingLinks.length < 1) {
         throw new Error("❌ Need at least 1 voting link for first server test.");
+    }
+    
+    // Check if first vote was already completed during auth setup
+    const firstVoteAlreadyCompleted = await isFirstVoteCompleted();
+    
+    if (firstVoteAlreadyCompleted) {
+        logInfo('First server vote was already completed during authentication setup');
+        logSuccess('Skipping redundant first server vote');
+        
+        // We still need to get the server name and add a placeholder result
+        await page.goto(votingLinks[0], { timeout: 60000 });
+        let serverName = 'First Server';
+        try {
+            const heading = await page.locator('h1').first().innerText();
+            serverName = heading || 'First Server';
+        } catch {
+            // Keep default name if extraction fails
+        }
+        
+        // Add a result indicating it was completed during auth
+        const skipResult = `┌────────────────────────────────────────────────────────────────────┐
+| ${serverName.substring(0, 66).padEnd(66)} |
+│ ✅ Vote completed during authentication setup                      │
+│ 🔄 Skipped to avoid redundant voting                               │
+└────────────────────────────────────────────────────────────────────┘`;
+        
+        await addVoteResult(votingLinks[0], serverName, skipResult);
+        return;
     }
     
     logStep(`Starting first server vote: ${votingLinks[0]}`, '📌');
@@ -37,7 +65,6 @@ test('vote on first server with authentication handling', async ({ page }) => {
         // Perform full Steam sign-in and save auth state
         voteResult = await votingPage.signIn(page);
         logSuccess('First server vote completed with fresh authentication');
-        console.log(voteResult);
         
         // Save the authentication state for future tests
         const authFile = getAuthFilePath();
@@ -64,7 +91,6 @@ test('vote on first server with authentication handling', async ({ page }) => {
         // Check vote status and log results
         voteResult = await votingPage.handleVoteStatus(page);
         logSuccess('First server vote completed with stored auth');
-        console.log(voteResult);
     }
     
     // Extract server name from page if possible
@@ -75,6 +101,6 @@ test('vote on first server with authentication handling', async ({ page }) => {
         // Keep default name if extraction fails
     }
     
-    // Save result for summary
+    // Save result for summary (don't display here)
     await addVoteResult(votingLinks[0], serverName, voteResult);
 });

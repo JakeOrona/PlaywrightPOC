@@ -68,10 +68,11 @@ async function runSmartTests() {
             console.log('\n🔄 Running authentication setup...');
             execSync('npx playwright test --project=setup', { stdio: 'inherit' });
             
-            console.log('\n🚀 Running voting tests sequentially (fresh authentication)...');
-            console.log('📌 Sequential execution required for fresh auth flow');
+            console.log('\n🚀 Running remaining voting tests (servers 2 & 3) in parallel...');
+            console.log('📌 Server 1 was completed during auth setup');
+            console.log('📌 Servers 2 & 3 will run in parallel');
             console.log('─'.repeat(80));
-            execSync('npx playwright test --project=sequential-fallback', { stdio: 'inherit' });
+            execSync('npx playwright test --project=second-server --project=third-server', { stdio: 'inherit' });
         } else {
             console.log('\n✅ Authentication is valid, skipping setup');
             console.log('\n🚀 Running all voting tests in FULL PARALLEL mode! ⚡');
@@ -104,10 +105,11 @@ async function forceAuthentication() {
         console.log('\n🔄 Running fresh authentication setup...');
         execSync('npx playwright test --project=setup', { stdio: 'inherit' });
         
-        console.log('\n🚀 Running voting tests sequentially (fresh authentication)...');
-        console.log('📌 Sequential execution required for fresh auth flow');
+        console.log('\n🚀 Running remaining voting tests (servers 2 & 3) in parallel...');
+        console.log('📌 Server 1 was completed during auth setup');
+        console.log('📌 Servers 2 & 3 will run in parallel');
         console.log('─'.repeat(80));
-        execSync('npx playwright test --project=sequential-fallback', { stdio: 'inherit' });
+        execSync('npx playwright test --project=second-server --project=third-server', { stdio: 'inherit' });
         
         console.log('\n✅ All tests completed with fresh authentication!');
         // Note: Final report will be printed by global teardown

@@ -5,7 +5,14 @@
  */
 
 /**
- * Creates a section header with decorative borders
+ * Creates a simple banner that works well in parallel execution
+ */
+export function logBanner(title: string, emoji: string = '🎯'): void {
+    console.log(`\n${emoji} ────── ${title} ──────`);
+}
+
+/**
+ * Creates a section header with decorative borders (use sparingly in parallel tests)
  */
 export function logSectionHeader(title: string, emoji: string = '🎯'): void {
     const width = 80;
