@@ -76,12 +76,12 @@ async function runSmartTests() {
         console.log('║                           SMART TEST RUNNER STARTING                        ║');
         console.log('══════════════════════════════════════════════════════════════════════════════');
         
-        // Clear results at the start of each smart test run
-        await clearVoteResults();
-        
         const authIsValid = await isAuthStateValid();
         
         if (!authIsValid) {
+            // Clear results only when starting fresh auth
+            await clearVoteResults();
+            
             console.log('\n🔄 Running authentication setup...');
             execSync('npx playwright test --project=setup', { stdio: 'inherit' });
             
@@ -89,8 +89,18 @@ async function runSmartTests() {
             console.log('📌 Server 1 was completed during auth setup');
             console.log('📌 Servers 2 & 3 will run in parallel');
             console.log('─'.repeat(80));
-            execSync('npx playwright test --project=second-server --project=third-server', { stdio: 'inherit' });
+            
+            // Set environment variable to indicate we're continuing from auth setup
+            process.env.CONTINUING_FROM_AUTH = 'true';
+            execSync('npx playwright test --project=second-server --project=third-server', { 
+                stdio: 'inherit',
+                env: { ...process.env, CONTINUING_FROM_AUTH: 'true' }
+            });
+            delete process.env.CONTINUING_FROM_AUTH;
         } else {
+            // Clear results when starting with valid auth (full run)
+            await clearVoteResults();
+            
             console.log('\n✅ Authentication is valid, skipping setup');
             console.log('\n🚀 Running all voting tests in FULL PARALLEL mode! ⚡');
             console.log('📌 All three servers will run simultaneously');
@@ -116,7 +126,7 @@ async function forceAuthentication() {
         console.log('║                         FORCING FRESH AUTHENTICATION                        ║');
         console.log('══════════════════════════════════════════════════════════════════════════════');
         
-        // Clear results at the start of forced auth
+        // Clear results and auth at the start of forced auth
         await clearVoteResults();
         await clearAuthState();
         console.log('\n🗑️ Cleared existing authentication state');
@@ -128,7 +138,14 @@ async function forceAuthentication() {
         console.log('📌 Server 1 was completed during auth setup');
         console.log('📌 Servers 2 & 3 will run in parallel');
         console.log('─'.repeat(80));
-        execSync('npx playwright test --project=second-server --project=third-server', { stdio: 'inherit' });
+        
+        // Set environment variable to indicate we're continuing from auth setup
+        process.env.CONTINUING_FROM_AUTH = 'true';
+        execSync('npx playwright test --project=second-server --project=third-server', { 
+            stdio: 'inherit',
+            env: { ...process.env, CONTINUING_FROM_AUTH: 'true' }
+        });
+        delete process.env.CONTINUING_FROM_AUTH;
         
         console.log('\n✅ All tests completed with fresh authentication!');
         // Note: Final report will be printed by global teardown
