@@ -9,10 +9,10 @@ export interface AuthState {
 
 const AUTH_FILE_PATH = 'playwright/.auth/user.json';
 const AUTH_FLAG_PATH = 'playwright/.auth/first-vote-completed.flag';
-const AUTH_VALIDITY_HOURS = 36;
+const AUTH_VALIDITY_HOURS = 27;
 
 /**
- * Checks if the stored authentication state exists and is less than 36 hours old
+ * Checks if the stored authentication state exists and is less than 27 hours old
  * @returns Promise<boolean> - true if auth is valid and recent, false otherwise
  */
 export async function isAuthStateValid(): Promise<boolean> {
