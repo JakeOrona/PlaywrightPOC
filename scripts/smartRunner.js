@@ -4,7 +4,7 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const AUTH_FILE_PATH = 'playwright/.auth/user.json';
-const AUTH_VALIDITY_HOURS = 27;
+const AUTH_VALIDITY_HOURS = 36;
 
 /**
  * Checks if the stored authentication state exists and is less than 36 hours old
@@ -58,25 +58,28 @@ async function clearAuthState() {
  */
 async function runSmartTests() {
     try {
-        console.log('🎯 -Starting smart test runner...');
+        console.log('\n🎯 ══════════════════════════════════════════════════════════════════════════════');
+        console.log('║                           SMART TEST RUNNER STARTING                        ║');
+        console.log('══════════════════════════════════════════════════════════════════════════════');
         
         const authIsValid = await isAuthStateValid();
         
         if (!authIsValid) {
-            console.log('🔄 -Running authentication setup...');
+            console.log('\n🔄 Running authentication setup...');
             execSync('npx playwright test --project=setup', { stdio: 'inherit' });
         } else {
-            console.log('✅ -Authentication is valid, skipping setup');
+            console.log('\n✅ Authentication is valid, skipping setup');
         }
         
-        console.log('🚀 -Running all voting tests (first, second, third servers)...');
+        console.log('\n🚀 Running all voting tests (first, second, third servers)...');
+        console.log('─'.repeat(80));
         execSync('npx playwright test --project=chromium', { stdio: 'inherit' });
         
-        console.log('🎉 -All tests completed successfully!');
+        console.log('\n🎉 All tests completed successfully!');
         // Note: Final report will be printed by global teardown
         
     } catch (error) {
-        console.error('❌ -Error running tests:', error);
+        console.error('\n❌ Error running tests:', error);
         process.exit(1);
     }
 }
@@ -86,22 +89,25 @@ async function runSmartTests() {
  */
 async function forceAuthentication() {
     try {
-        console.log('🔄 -Forcing fresh authentication...');
+        console.log('\n🔄 ══════════════════════════════════════════════════════════════════════════════');
+        console.log('║                         FORCING FRESH AUTHENTICATION                        ║');
+        console.log('══════════════════════════════════════════════════════════════════════════════');
         
         await clearAuthState();
-        console.log('🗑️ -Cleared existing authentication state');
+        console.log('\n🗑️ Cleared existing authentication state');
         
-        console.log('🔄 -Running fresh authentication setup...');
+        console.log('\n🔄 Running fresh authentication setup...');
         execSync('npx playwright test --project=setup', { stdio: 'inherit' });
         
-        console.log('🚀 -Running all voting tests with fresh authentication...');
+        console.log('\n🚀 Running all voting tests with fresh authentication...');
+        console.log('─'.repeat(80));
         execSync('npx playwright test --project=chromium', { stdio: 'inherit' });
         
-        console.log('✅ -All tests completed with fresh authentication!');
+        console.log('\n✅ All tests completed with fresh authentication!');
         // Note: Final report will be printed by global teardown
         
     } catch (error) {
-        console.error('❌ -Error during forced authentication:', error);
+        console.error('\n❌ Error during forced authentication:', error);
         process.exit(1);
     }
 }
