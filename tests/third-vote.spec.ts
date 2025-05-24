@@ -47,7 +47,11 @@ test('vote on third server using saved authentication', async ({ page }) => {
             logStep(`Vote process started for third server`, '🗳️');
             
             // Verify Steam sign-in and submit vote
-            const steamUserID = page.locator('#openidForm').getByText('Gary_Oak');
+            const steamUserDisplayName = process.env.STEAM_USER_ID || '';
+            if (!steamUserDisplayName) {
+                throw new Error("❌ STEAM_USER_ID environment variable is required.");
+            }
+            const steamUserID = page.locator('#openidForm').getByText(steamUserDisplayName);
             const steamSignInButton = page.getByRole('button', { name: 'Sign In' });
             
             // Wait for elements and click sign-in

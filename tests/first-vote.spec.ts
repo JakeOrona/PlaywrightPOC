@@ -61,7 +61,11 @@ test('vote on first server with authentication handling', async ({ page }) => {
         logStep(`Vote process started for first server`, '🗳️');
         
         // Verify Steam sign-in and submit vote
-        const steamUserID = page.locator('#openidForm').getByText('Gary_Oak');
+        const steamUserDisplayName = process.env.STEAM_USER_ID || '';
+        if (!steamUserDisplayName) {
+            throw new Error("❌ STEAM_USER_ID environment variable is required.");
+        }
+        const steamUserID = page.locator('#openidForm').getByText(steamUserDisplayName);
         const steamSignInButton = page.getByRole('button', { name: 'Sign In' });
         
         // Wait for elements and click sign-in

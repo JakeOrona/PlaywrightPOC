@@ -7,6 +7,7 @@ dotenv.config({ path: 'properties.env' });
 
 export class VotingAndLinksPage {
     readonly page: Page;
+    readonly steamUserDisplayName: string;
     votingLinks: string[];
     voteButton: Locator;
     agreeBox: Locator;
@@ -26,6 +27,18 @@ export class VotingAndLinksPage {
         this.page = page;
         this.votingLinks = [];
         this.verboseLogging = verboseLogging;
+        
+        // Load Steam User ID from environment variable with validation
+        this.steamUserDisplayName = process.env.STEAM_USER_ID || "";
+        if (!this.steamUserDisplayName) {
+            throw new Error("❌ STEAM_USER_ID environment variable is required. Please set it in your properties.env file.");
+        }
+        
+        // Log the Steam ID being used (helpful for debugging)
+        if (this.verboseLogging) {
+            console.log(`🔑 Using Steam User ID: ${this.steamUserDisplayName}`);
+        }
+        
         this.voteButton = page.locator('//a[@class="btn btn-success mr-1 my-1" and @role="button" and @title="Vote"]');
         this.agreeBox = page.locator('#accept');
         this.steamImage = page.locator('input[type="image"]');
@@ -171,8 +184,9 @@ export class VotingAndLinksPage {
             this.log("Steam Mobile App confirmation detected", "🤳");
             await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
             this.log("Steam user ID and sign-in button are visible", "🙋‍♂️");
-            await expect(steamUserID).toHaveText("Gary_Oak", { timeout: 45000 });
-            this.log("Verified Steam ID is correct", '✅', 'success');
+            // Updated to use environment variable instead of hardcoded value
+            await expect(steamUserID).toHaveText(this.steamUserDisplayName, { timeout: 45000 });
+            this.log(`Verified Steam ID is correct: ${this.steamUserDisplayName}`, '✅', 'success');
             await steamSignInButton.click();
             this.log("Clicked Steam Sign-In button", "👇");
         });
@@ -228,8 +242,8 @@ export class VotingAndLinksPage {
             });
 
             await test.step("Verify Steam sign-in and submit vote", async () => {
-                // Dynamically create and assign locators for new tabs
-                const steamUserID = newTab.locator('#openidForm').getByText('Gary_Oak');
+                // Updated to use environment variable instead of hardcoded value
+                const steamUserID = newTab.locator('#openidForm').getByText(this.steamUserDisplayName);
                 const steamSignInButton = newTab.getByRole('button', { name: 'Sign In' });
 
                 // Assertions before clicking

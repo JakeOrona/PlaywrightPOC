@@ -27,14 +27,30 @@ npm install
 ```
 
 ### **3️⃣ Configure Environment Variables**
-Rename the `.env.example` file to `.env` and set your credentials.
-```sh
-cp properties.env.example properties.env
-```
-Edit `properties.env` with your required values:
+Edit properties.env with your Steam credentials:
 ```ini
+# Steam Account Credentials
 USER_NAME=your_steam_username
 PASSWORD=your_steam_password
+
+# Steam Profile Settings
+STEAM_USER_ID=your_steam_display_name
+```
+#### 📝 Variable Explanations:
+- USER_NAME: Your Steam login username (what you type to log in)
+- PASSWORD: Your Steam account password
+- STEAM_USER_ID: Your Steam display name (shown in login confirmation pages)
+
+#### ❓ How to find your Steam display name:
+- Log in to Steam in a web browser
+- Look for the name that appears in login confirmation dialogs
+- This is your Steam profile/display name (case-sensitive!)
+
+#### Example configuration:
+```ini
+USER_NAME=mysteamlogin
+PASSWORD=mypassword123
+STEAM_USER_ID=MyGamertag
 ```
 
 ### **4️⃣ Create and Configure `links.txt`**
@@ -43,12 +59,38 @@ Create a `links.txt` file inside the `/testData/` directory:
 mkdir -p testData
 touch testData/links.txt
 ```
-Edit `testData/links.txt` and add voting links, each on a new line:
+Edit `testData/links.txt` and add voting links, each on a new line.
+
+#### 📝 Important: File Format
+The links.txt file should contain one complete URL per line with no prefixes or additional formatting:
 ```txt
 https://rust-servers.net/server/abc123/
 https://rust-servers.net/server/xyz123/
 https://rust-servers.net/server/123abc/
 ```
+
+✅ Correct Format:
+
+- Each line contains only the complete URL
+- No "link1:", "server1:", or other prefixes
+- URLs must start with https:// or http://
+- One URL per line, no empty lines between URLs
+
+❌ Incorrect Format:
+```txt
+link1:https://rust-servers.net/server/abc123/
+server1 = https://rust-servers.net/server/xyz123/
+https://rust-servers.net/server/123abc/ - Main Server
+```
+
+#### 🔍 How the framework reads the file:
+The system uses regex pattern matching to extract URLs directly from each line, so any additional text or formatting will be ignored, but it's best to keep the format clean for reliability.
+
+#### 📊 Server Processing Order:
+- Line 1: First server (processed during authentication setup OR first-vote test)
+- Line 2: Second server (processed by second-vote test)
+- Line 3: Third server (processed by third-vote test)
+- Additional lines: Can be added for future expansion
 
 ## 🚀 Running Tests
 
@@ -145,7 +187,7 @@ PlaywrightPOC/
 ├── scripts/                    # Automation scripts
 │   └── smartRunner.js          # Smart test execution runner
 ├── testData/                   # External test data (ignored in Git)
-│   └── links.txt               # Voting server URLs
+│   └── links.txt               # Voting server URLs (one URL per line)
 ├── playwright/.auth/           # Authentication storage (ignored in Git)
 │   ├── user.json               # Stored authentication state
 │   └── first-vote-completed.flag # Vote tracking flag
@@ -196,6 +238,47 @@ Result: Each server voted on exactly once
 - **Timeouts**: 60 seconds for page loads and expectations
 - **Screenshots**: Captured on failures and at key voting stages
 - **Browser**: Chrome (configurable for other browsers)
+
+## 🛠️ Troubleshooting
+
+### **Environment Setup Issues**
+- **Missing `properties.env.example`**: Create the file using the template above
+- **"Cannot find module" errors**: Run `npm install` to install dependencies
+- **Permission errors**: Ensure your user has write access to the project directory
+
+### **Authentication Issues**
+- **"STEAM_USER_ID environment variable is required"**: Add all three variables to `properties.env`
+- **Steam Mobile App not responding**: Ensure the Steam Mobile app is installed and you're logged in
+- **"Steam ID not found" errors**: 
+  1. Verify your `STEAM_USER_ID` matches your actual Steam display name exactly (case-sensitive)
+  2. Log in to Steam in a browser to see your display name
+  3. Update `properties.env` with the correct display name
+
+### **Links File Issues**
+- **"No voting links loaded"**: 
+  1. Ensure `testData/links.txt` exists
+  2. Check that URLs start with `http://` or `https://`
+  3. Verify no empty lines or invalid URLs
+- **"Need at least X voting links"**: Add more URLs to your `links.txt` file
+- **Invalid URL format**: Each line should contain only a complete URL
+
+### **Test Execution Issues**
+- **Tests hang on Steam login**: Check your `USER_NAME` and `PASSWORD` in `properties.env`
+- **Parallel execution conflicts**: The framework handles this automatically with smart authentication
+- **Screenshot/results permissions**: Ensure `test-results/` directory is writable
+- **Authentication expires frequently**: This is normal - the system uses 27-hour validity for security
+
+### **Quick Reset Commands**
+```sh
+# Clear authentication and force fresh login
+npm run test:force-auth
+
+# Clear results and run fresh tests
+rm -rf test-results/ && npm run test:smart
+
+# Clear everything and start over
+rm -rf test-results/ playwright/.auth/ && npm run test:smart
+```
 
 ## 🛡️ Error Handling & Reliability
 
