@@ -60,7 +60,6 @@ async function runSmartTests() {
     try {
         console.log('\n🎯 ══════════════════════════════════════════════════════════════════════════════');
         console.log('║                           SMART TEST RUNNER STARTING                        ║');
-        console.log('║                         (Parallel Execution Enabled)                        ║');
         console.log('══════════════════════════════════════════════════════════════════════════════');
         
         const authIsValid = await isAuthStateValid();
@@ -68,14 +67,18 @@ async function runSmartTests() {
         if (!authIsValid) {
             console.log('\n🔄 Running authentication setup...');
             execSync('npx playwright test --project=setup', { stdio: 'inherit' });
+            
+            console.log('\n🚀 Running voting tests sequentially (fresh authentication)...');
+            console.log('📌 Sequential execution required for fresh auth flow');
+            console.log('─'.repeat(80));
+            execSync('npx playwright test --project=sequential-fallback', { stdio: 'inherit' });
         } else {
             console.log('\n✅ Authentication is valid, skipping setup');
+            console.log('\n🚀 Running all voting tests in FULL PARALLEL mode! ⚡');
+            console.log('📌 All three servers will run simultaneously');
+            console.log('─'.repeat(80));
+            execSync('npx playwright test --project=first-server --project=second-server --project=third-server', { stdio: 'inherit' });
         }
-        
-        console.log('\n🚀 Running voting tests...');
-        console.log('📌 First server (sequential) → Second & Third servers (parallel)');
-        console.log('─'.repeat(80));
-        execSync('npx playwright test --project=first-server --project=parallel-servers', { stdio: 'inherit' });
         
         console.log('\n🎉 All tests completed successfully!');
         // Note: Final report will be printed by global teardown
@@ -92,9 +95,8 @@ async function runSmartTests() {
 async function forceAuthentication() {
     try {
         console.log('\n🔄 ══════════════════════════════════════════════════════════════════════════════');
-        console.log('║                         FORCING FRESH AUTHENTICATION                           ║');
-        console.log('║                         (Parallel Execution Enabled)                           ║');
-        console.log('═══════════════════════════════════════════════════════════════════════════════════');
+        console.log('║                         FORCING FRESH AUTHENTICATION                        ║');
+        console.log('══════════════════════════════════════════════════════════════════════════════');
         
         await clearAuthState();
         console.log('\n🗑️ Cleared existing authentication state');
@@ -102,10 +104,10 @@ async function forceAuthentication() {
         console.log('\n🔄 Running fresh authentication setup...');
         execSync('npx playwright test --project=setup', { stdio: 'inherit' });
         
-        console.log('\n🚀 Running voting tests with fresh authentication...');
-        console.log('📌 First server (sequential) → Second & Third servers (parallel)');
+        console.log('\n🚀 Running voting tests sequentially (fresh authentication)...');
+        console.log('📌 Sequential execution required for fresh auth flow');
         console.log('─'.repeat(80));
-        execSync('npx playwright test --project=first-server --project=parallel-servers', { stdio: 'inherit' });
+        execSync('npx playwright test --project=sequential-fallback', { stdio: 'inherit' });
         
         console.log('\n✅ All tests completed with fresh authentication!');
         // Note: Final report will be printed by global teardown

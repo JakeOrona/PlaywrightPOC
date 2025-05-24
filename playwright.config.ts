@@ -6,7 +6,7 @@ export default defineConfig({
     globalSetup: require.resolve('./global-setup'),
     globalTeardown: require.resolve('./global-teardown'),
     /* Run tests in files in parallel */
-    fullyParallel: false, // Keep false globally for proper test ordering
+    fullyParallel: false, // Keep false globally, control at project level
     timeout: 60000,
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
@@ -15,8 +15,8 @@ export default defineConfig({
     expect: {
         timeout: 60000
     },
-    /* Opt out of parallel tests on CI. */
-    workers: process.env.CI ? 1 : 2, // Allow 2 workers for parallel execution
+    /* Allow multiple workers for parallel execution */
+    workers: process.env.CI ? 1 : 3, // Allow 3 workers for full parallel execution
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter: [
         ['html', { outputFolder: 'playwright-report', open: 'never' }],
@@ -41,7 +41,7 @@ export default defineConfig({
             testMatch: /.*\.setup\.ts/,
             use: { ...devices['Desktop Chrome'] },
         },
-        // First server test - must run first and sequentially
+        // First server test - can run in parallel if auth is valid
         {
             name: 'first-server',
             use: { 
@@ -49,21 +49,41 @@ export default defineConfig({
                 // Use the storage state from setup
                 storageState: 'playwright/.auth/user.json'
             },
-            dependencies: [], // No dependencies as it handles auth internally
+            dependencies: [], // No dependencies when auth is valid
             testMatch: '**/first-vote.spec.ts',
-            fullyParallel: false, // Ensure this runs sequentially
         },
-        // Second and third server tests - can run in parallel after first server
+        // Second server test - can run in parallel if auth is valid
         {
-            name: 'parallel-servers',
+            name: 'second-server',
             use: { 
                 ...devices['Desktop Chrome'],
                 // Use the storage state from setup
                 storageState: 'playwright/.auth/user.json'
             },
-            dependencies: ['first-server'], // Wait for first server to complete
-            testMatch: ['**/second-vote.spec.ts', '**/third-vote.spec.ts'],
-            fullyParallel: true, // Allow parallel execution within this project
+            dependencies: [], // No dependencies when auth is valid
+            testMatch: '**/second-vote.spec.ts',
+        },
+        // Third server test - can run in parallel if auth is valid
+        {
+            name: 'third-server',
+            use: { 
+                ...devices['Desktop Chrome'],
+                // Use the storage state from setup
+                storageState: 'playwright/.auth/user.json'
+            },
+            dependencies: [], // No dependencies when auth is valid
+            testMatch: '**/third-vote.spec.ts',
+        },
+        // Fallback sequential project for when fresh auth is needed
+        {
+            name: 'sequential-fallback',
+            use: { 
+                ...devices['Desktop Chrome'],
+                storageState: 'playwright/.auth/user.json'
+            },
+            dependencies: [],
+            testMatch: ['**/first-vote.spec.ts', '**/second-vote.spec.ts', '**/third-vote.spec.ts'],
+            fullyParallel: false, // Run sequentially for fresh auth scenarios
         }
     ],
 });

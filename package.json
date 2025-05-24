@@ -7,9 +7,11 @@
         "test": "npx playwright test",
         "test:setup": "npx playwright test --project=setup",
         "test:first": "npx playwright test --project=first-server",
-        "test:parallel": "npx playwright test --project=parallel-servers", 
-        "test:sequential": "npx playwright test --project=first-server --project=parallel-servers",
-        "test:votes": "npx playwright test --project=first-server --project=parallel-servers",
+        "test:second": "npx playwright test --project=second-server",
+        "test:third": "npx playwright test --project=third-server",
+        "test:parallel": "npx playwright test --project=first-server --project=second-server --project=third-server", 
+        "test:sequential": "npx playwright test --project=sequential-fallback",
+        "test:votes": "npx playwright test --project=first-server --project=second-server --project=third-server",
         "test:smart": "node scripts/smartRunner.js",
         "test:force-auth": "node scripts/smartRunner.js force-auth",
         "test:all": "npm run test:smart",
@@ -18,7 +20,7 @@
         "allure:open": "npx allure open allure-report"
     },
     "keywords": [],
-    "author": "Jake",
+    "author": "",
     "license": "ISC",
     "devDependencies": {
         "@playwright/test": "^1.49.1",
