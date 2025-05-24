@@ -8,7 +8,7 @@ const AUTH_VALIDITY_HOURS = 27;
 const RESULTS_FILE_PATH = 'test-results/vote-results.json';
 
 /**
- * Checks if the stored authentication state exists and is less than 36 hours old
+ * Checks if the stored authentication state exists and is less than 27 hours old
  * @returns Promise<boolean> - true if auth is valid and recent, false otherwise
  */
 async function isAuthStateValid() {
