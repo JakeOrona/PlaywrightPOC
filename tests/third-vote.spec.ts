@@ -3,6 +3,7 @@ import { test, expect } from '@playwright/test';
 import { VotingAndLinksPage } from '../pageObjects/paradiseIslandLinks';
 import { loadVotingLinks } from '../helpers/methods';
 import { isAuthStateValid } from '../helpers/authHelpers';
+import { addVoteResult } from '../helpers/resultsCollector';
 import path from 'path';
 
 test('vote on third server using saved authentication', async ({ page }) => {
@@ -22,6 +23,9 @@ test('vote on third server using saved authentication', async ({ page }) => {
     await page.goto(votingLinks[2], { timeout: 60000 });
     console.log(`🌍 -Opened third voting link: ${votingLinks[2]}`);
     
+    let voteResult: string;
+    let serverName = 'Third Server';
+    
     // Try to use existing auth, fall back to full authentication if needed
     try {
         const authIsValid = await isAuthStateValid();
@@ -29,39 +33,49 @@ test('vote on third server using saved authentication', async ({ page }) => {
         if (!authIsValid) {
             console.log('⚠️ -No valid auth detected, performing full Steam sign-in...');
             // Perform full Steam sign-in if auth is invalid
-            const voteResult = await votingPage.signIn(page);
+            voteResult = await votingPage.signIn(page);
             console.log('✅ -Third server vote completed with fresh authentication:');
             console.log(voteResult);
-            return;
+        } else {
+            // If auth is valid, proceed with simplified flow
+            console.log('✅ -Using existing valid authentication');
+            
+            // Perform voting actions (no sign-in needed due to saved state)
+            await votingPage.clickVoteFlow(page);
+            console.log(`🗳️ -Vote process started for third server`);
+            
+            // Verify Steam sign-in and submit vote
+            const steamUserID = page.locator('#openidForm').getByText('Gary_Oak');
+            const steamSignInButton = page.getByRole('button', { name: 'Sign In' });
+            
+            // Wait for elements and click sign-in
+            await expect(steamUserID).toBeVisible({ timeout: 40000 });
+            await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
+            await steamSignInButton.click({ force: true });
+            console.log(`🔑 -Steam sign-in completed for third server`);
+            
+            // Check vote status and log results
+            voteResult = await votingPage.handleVoteStatus(page);
+            console.log('✅ -Third server vote completed with stored auth:');
+            console.log(voteResult);
         }
-        
-        // If auth is valid, proceed with simplified flow
-        console.log('✅ -Using existing valid authentication');
-        
-        // Perform voting actions (no sign-in needed due to saved state)
-        await votingPage.clickVoteFlow(page);
-        console.log(`🗳️ -Vote process started for third server`);
-        
-        // Verify Steam sign-in and submit vote
-        const steamUserID = page.locator('#openidForm').getByText('Gary_Oak');
-        const steamSignInButton = page.getByRole('button', { name: 'Sign In' });
-        
-        // Wait for elements and click sign-in
-        await expect(steamUserID).toBeVisible({ timeout: 40000 });
-        await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
-        await steamSignInButton.click({ force: true });
-        console.log(`🔑 -Steam sign-in completed for third server`);
-        
-        // Check vote status and log results
-        const voteResult = await votingPage.handleVoteStatus(page);
-        console.log('✅ -Third server vote completed with stored auth:');
-        console.log(voteResult);
         
     } catch (error) {
         console.log('⚠️ -Auth check failed, attempting full authentication...');
         // Fall back to full authentication if anything goes wrong
-        const voteResult = await votingPage.signIn(page);
+        voteResult = await votingPage.signIn(page);
         console.log('✅ -Third server vote completed with fallback authentication:');
         console.log(voteResult);
     }
+    
+    // Extract server name from page if possible
+    try {
+        const heading = await page.locator('h1').first().innerText();
+        serverName = heading || 'Third Server';
+    } catch {
+        // Keep default name if extraction fails
+    }
+    
+    // Save result for summary
+    await addVoteResult(votingLinks[2], serverName, voteResult);
 });
