@@ -3,6 +3,8 @@ import { isAuthStateValid } from './helpers/authHelpers';
 
 export default defineConfig({
     testDir: './tests',
+    globalSetup: require.resolve('./global-setup'),
+    globalTeardown: require.resolve('./global-teardown'),
     /* Run tests in files in parallel */
     fullyParallel: false, // Changed to false to ensure proper test order
     timeout: 60000,

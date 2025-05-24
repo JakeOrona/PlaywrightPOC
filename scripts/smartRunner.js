@@ -2,10 +2,9 @@
 const { execSync } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
-const { printVoteResultsSummary } = require('../helpers/resultsCollector');
 
 const AUTH_FILE_PATH = 'playwright/.auth/user.json';
-const AUTH_VALIDITY_HOURS = 36;
+const AUTH_VALIDITY_HOURS = 27;
 
 /**
  * Checks if the stored authentication state exists and is less than 36 hours old
@@ -74,6 +73,7 @@ async function runSmartTests() {
         execSync('npx playwright test --project=chromium', { stdio: 'inherit' });
         
         console.log('🎉 -All tests completed successfully!');
+        // Note: Final report will be printed by global teardown
         
     } catch (error) {
         console.error('❌ -Error running tests:', error);
@@ -98,8 +98,7 @@ async function forceAuthentication() {
         execSync('npx playwright test --project=chromium', { stdio: 'inherit' });
         
         console.log('✅ -All tests completed with fresh authentication!');
-
-        await printVoteResultsSummary();
+        // Note: Final report will be printed by global teardown
         
     } catch (error) {
         console.error('❌ -Error during forced authentication:', error);
