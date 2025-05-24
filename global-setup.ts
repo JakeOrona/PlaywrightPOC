@@ -22,6 +22,9 @@ async function globalSetup() {
         }
     } else {
         console.log('🔄 -Authentication setup required');
+        // DON'T clear results here - let smartRunner handle it
+        // This prevents clearing results between auth setup and remaining tests
+        // Ensure environment variable is not set
         delete process.env.SKIP_AUTH_SETUP;
     }
 }

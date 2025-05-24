@@ -85,16 +85,24 @@ async function runSmartTests() {
             console.log('\n🔄 Running authentication setup...');
             execSync('npx playwright test --project=setup', { stdio: 'inherit' });
             
-            console.log('\n🚀 Running remaining voting tests (servers 2 & 3) in parallel...');
-            console.log('📌 Server 1 was completed during auth setup');
-            console.log('📌 Servers 2 & 3 will run in parallel');
+            console.log('\n🚀 Running remaining voting tests (servers 1, 2 & 3) in parallel...');
+            console.log('📌 Server 1 will collect the result from auth session');
+            console.log('📌 All 3 servers will run in parallel');
             console.log('─'.repeat(80));
             
             // Set environment variable to indicate we're continuing from auth setup
             process.env.CONTINUING_FROM_AUTH = 'true';
-            execSync('npx playwright test --project=second-server --project=third-server', { 
+            
+            // Create explicit environment object with our flag
+            const envWithFlag = {
+                ...process.env,
+                CONTINUING_FROM_AUTH: 'true'
+            };
+            
+            // Run ALL THREE tests, including first-server which will collect the auth result
+            execSync('npx playwright test --project=first-server --project=second-server --project=third-server', { 
                 stdio: 'inherit',
-                env: { ...process.env, CONTINUING_FROM_AUTH: 'true' }
+                env: envWithFlag
             });
             delete process.env.CONTINUING_FROM_AUTH;
         } else {
@@ -134,14 +142,16 @@ async function forceAuthentication() {
         console.log('\n🔄 Running fresh authentication setup...');
         execSync('npx playwright test --project=setup', { stdio: 'inherit' });
         
-        console.log('\n🚀 Running remaining voting tests (servers 2 & 3) in parallel...');
-        console.log('📌 Server 1 was completed during auth setup');
-        console.log('📌 Servers 2 & 3 will run in parallel');
+        console.log('\n🚀 Running remaining voting tests (servers 1, 2 & 3) in parallel...');
+        console.log('📌 Server 1 will collect the result from auth session');
+        console.log('📌 All 3 servers will run in parallel');
         console.log('─'.repeat(80));
         
         // Set environment variable to indicate we're continuing from auth setup
         const env = { ...process.env, CONTINUING_FROM_AUTH: 'true' };
-        execSync('npx playwright test --project=second-server --project=third-server', { 
+        
+        // Run ALL THREE tests, including first-server which will collect the auth result
+        execSync('npx playwright test --project=first-server --project=second-server --project=third-server', { 
             stdio: 'inherit',
             env: env
         });

@@ -23,6 +23,13 @@ test('vote on first server with authentication handling', async ({ page }) => {
     // Check if first vote was already completed during auth setup
     const firstVoteAlreadyCompleted = await isFirstVoteCompleted();
     
+    if (firstVoteAlreadyCompleted) {
+        logInfo('First server vote was already completed during authentication setup');
+        logSuccess('Skipping first server test - result already saved during auth');
+        // Don't save any results here - auth setup already did it
+        return;
+    }
+    
     logStep(`Starting first server vote: ${votingLinks[0]}`, '📌');
     
     // Navigate to first voting link
@@ -32,50 +39,40 @@ test('vote on first server with authentication handling', async ({ page }) => {
     let voteResult: string;
     let serverName = 'First Server';
     
-    if (firstVoteAlreadyCompleted) {
-        logInfo('First server vote was already completed during authentication setup');
-        logSuccess('Collecting actual vote result from auth session');
+    // Check authentication and handle accordingly
+    const authIsValid = await isAuthStateValid();
+    
+    if (!authIsValid) {
+        logWarning('No valid auth detected, performing full Steam sign-in...');
+        // Perform full Steam sign-in and save auth state
+        voteResult = await votingPage.signIn(page);
+        logSuccess('First server vote completed with fresh authentication');
         
-        // Since auth setup already voted, we just need to check the current vote status
-        // Navigate to the page and get the actual result
-        voteResult = await votingPage.handleVoteStatus(page);
-        logSuccess('First server vote result collected from auth session');
+        // Save the authentication state for future tests
+        const authFile = getAuthFilePath();
+        await page.context().storageState({ path: authFile });
+        logStep(`Fresh authentication state saved to: ${authFile}`, '💾');
     } else {
-        // Check authentication and handle accordingly
-        const authIsValid = await isAuthStateValid();
+        // If auth is valid, proceed with simplified flow
+        logSuccess('Using existing valid authentication');
         
-        if (!authIsValid) {
-            logWarning('No valid auth detected, performing full Steam sign-in...');
-            // Perform full Steam sign-in and save auth state
-            voteResult = await votingPage.signIn(page);
-            logSuccess('First server vote completed with fresh authentication');
-            
-            // Save the authentication state for future tests
-            const authFile = getAuthFilePath();
-            await page.context().storageState({ path: authFile });
-            logStep(`Fresh authentication state saved to: ${authFile}`, '💾');
-        } else {
-            // If auth is valid, proceed with simplified flow
-            logSuccess('Using existing valid authentication');
-            
-            // Perform voting actions (no sign-in needed due to saved state)
-            await votingPage.clickVoteFlow(page);
-            logStep(`Vote process started for first server`, '🗳️');
-            
-            // Verify Steam sign-in and submit vote
-            const steamUserID = page.locator('#openidForm').getByText('Gary_Oak');
-            const steamSignInButton = page.getByRole('button', { name: 'Sign In' });
-            
-            // Wait for elements and click sign-in
-            await expect(steamUserID).toBeVisible({ timeout: 40000 });
-            await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
-            await steamSignInButton.click({ force: true });
-            logStep(`Steam sign-in completed for first server`, '🔑');
-            
-            // Check vote status and log results
-            voteResult = await votingPage.handleVoteStatus(page);
-            logSuccess('First server vote completed with stored auth');
-        }
+        // Perform voting actions (no sign-in needed due to saved state)
+        await votingPage.clickVoteFlow(page);
+        logStep(`Vote process started for first server`, '🗳️');
+        
+        // Verify Steam sign-in and submit vote
+        const steamUserID = page.locator('#openidForm').getByText('Gary_Oak');
+        const steamSignInButton = page.getByRole('button', { name: 'Sign In' });
+        
+        // Wait for elements and click sign-in
+        await expect(steamUserID).toBeVisible({ timeout: 40000 });
+        await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
+        await steamSignInButton.click({ force: true });
+        logStep(`Steam sign-in completed for first server`, '🔑');
+        
+        // Check vote status and log results
+        voteResult = await votingPage.handleVoteStatus(page);
+        logSuccess('First server vote completed with stored auth');
     }
     
     // Extract server name from page if possible
@@ -86,6 +83,6 @@ test('vote on first server with authentication handling', async ({ page }) => {
         // Keep default name if extraction fails
     }
     
-    // Save result for summary (this will be the only result saved for server 1)
+    // Save result for summary
     await addVoteResult(votingLinks[0], serverName, voteResult);
 });

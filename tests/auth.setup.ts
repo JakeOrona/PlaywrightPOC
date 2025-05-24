@@ -40,6 +40,7 @@ setup('ensure valid authentication state', async ({ page }) => {
     await page.goto(votingLinks[0], { timeout: 60000 });
     
     // Perform Steam sign-in and vote (needed to complete the auth flow)
+    // NOTE: We perform the vote but DO NOT save results - let first-vote.spec.ts handle result collection
     const voteResult = await votingPage.signIn(page);
     
     // Save the authentication state

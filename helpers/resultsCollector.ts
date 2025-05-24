@@ -37,15 +37,12 @@ export async function addVoteResult(serverUrl: string, serverName: string, forma
             const fileContent = await fs.readFile(RESULTS_FILE_PATH, 'utf-8');
             existingResults = JSON.parse(fileContent);
         } catch {
-            // File doesn't exist or is invalid, start fresh
         }
 
         // Add new result
         existingResults.push(result);
-
         // Write back to file
-        await fs.writeFile(RESULTS_FILE_PATH, JSON.stringify(existingResults, null, 2));
-        
+        await fs.writeFile(RESULTS_FILE_PATH, JSON.stringify(existingResults, null, 2));        
     } catch (error) {
         console.error('❌ -Error saving vote result:', error);
     }
@@ -57,7 +54,8 @@ export async function addVoteResult(serverUrl: string, serverName: string, forma
 export async function getAllVoteResults(): Promise<VoteResult[]> {
     try {
         const fileContent = await fs.readFile(RESULTS_FILE_PATH, 'utf-8');
-        return JSON.parse(fileContent);
+        const results = JSON.parse(fileContent);
+        return results;
     } catch {
         return [];
     }
@@ -80,14 +78,14 @@ export async function clearVoteResults(): Promise<void> {
  */
 export async function printVoteResultsSummary(): Promise<void> {
     const results = await getAllVoteResults();
-    
+        
     if (results.length === 0) {
         console.log('\n📜 No vote results to display.\n');
         return;
     }
 
     console.log('\n📜 Summary of Vote Results:\n');
-    results.forEach((result) => {
+    results.forEach((result, index) => {
         console.log(result.result);
     });
 }
