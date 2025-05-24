@@ -1,30 +1,33 @@
 {
-  "name": "jakes-practice",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-      "test": "npx playwright test",
-      "test:setup": "npx playwright test --project=setup",
-      "test:votes": "npx playwright test --project=chromium",
-      "test:smart": "node scripts/smartRunner.js",
-      "test:force-auth": "node scripts/smartRunner.js force-auth",
-      "test:all": "npm run test:smart",
-      "test:allure": "npm run test && npm run allure:report",
-      "allure:report": "npx allure generate allure-results -o allure-report --clean",
-      "allure:open": "npx allure open allure-report"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-      "@playwright/test": "^1.49.1",
-      "@types/node": "^22.10.5",
-      "allure-commandline": "^2.32.2",
-      "allure-playwright": "^3.2.0"
-  },
-  "dependencies": {
-      "dotenv": "^16.4.7",
-      "eslint": "^9.21.0"
-  }
+    "name": "jakes-practice",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "npx playwright test",
+        "test:setup": "npx playwright test --project=setup",
+        "test:first": "npx playwright test --project=first-server",
+        "test:parallel": "npx playwright test --project=parallel-servers", 
+        "test:sequential": "npx playwright test --project=first-server --project=parallel-servers",
+        "test:votes": "npx playwright test --project=first-server --project=parallel-servers",
+        "test:smart": "node scripts/smartRunner.js",
+        "test:force-auth": "node scripts/smartRunner.js force-auth",
+        "test:all": "npm run test:smart",
+        "test:allure": "npm run test && npm run allure:report",
+        "allure:report": "npx allure generate allure-results -o allure-report --clean",
+        "allure:open": "npx allure open allure-report"
+    },
+    "keywords": [],
+    "author": "Jake",
+    "license": "ISC",
+    "devDependencies": {
+        "@playwright/test": "^1.49.1",
+        "@types/node": "^22.10.5",
+        "allure-commandline": "^2.32.2",
+        "allure-playwright": "^3.2.0"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.7",
+        "eslint": "^9.21.0"
+    }
 }

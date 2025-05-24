@@ -60,6 +60,7 @@ async function runSmartTests() {
     try {
         console.log('\n🎯 ══════════════════════════════════════════════════════════════════════════════');
         console.log('║                           SMART TEST RUNNER STARTING                        ║');
+        console.log('║                         (Parallel Execution Enabled)                        ║');
         console.log('══════════════════════════════════════════════════════════════════════════════');
         
         const authIsValid = await isAuthStateValid();
@@ -71,9 +72,10 @@ async function runSmartTests() {
             console.log('\n✅ Authentication is valid, skipping setup');
         }
         
-        console.log('\n🚀 Running all voting tests (first, second, third servers)...');
+        console.log('\n🚀 Running voting tests...');
+        console.log('📌 First server (sequential) → Second & Third servers (parallel)');
         console.log('─'.repeat(80));
-        execSync('npx playwright test --project=chromium', { stdio: 'inherit' });
+        execSync('npx playwright test --project=first-server --project=parallel-servers', { stdio: 'inherit' });
         
         console.log('\n🎉 All tests completed successfully!');
         // Note: Final report will be printed by global teardown
@@ -90,8 +92,9 @@ async function runSmartTests() {
 async function forceAuthentication() {
     try {
         console.log('\n🔄 ══════════════════════════════════════════════════════════════════════════════');
-        console.log('║                         FORCING FRESH AUTHENTICATION                        ║');
-        console.log('══════════════════════════════════════════════════════════════════════════════');
+        console.log('║                         FORCING FRESH AUTHENTICATION                           ║');
+        console.log('║                         (Parallel Execution Enabled)                           ║');
+        console.log('═══════════════════════════════════════════════════════════════════════════════════');
         
         await clearAuthState();
         console.log('\n🗑️ Cleared existing authentication state');
@@ -99,9 +102,10 @@ async function forceAuthentication() {
         console.log('\n🔄 Running fresh authentication setup...');
         execSync('npx playwright test --project=setup', { stdio: 'inherit' });
         
-        console.log('\n🚀 Running all voting tests with fresh authentication...');
+        console.log('\n🚀 Running voting tests with fresh authentication...');
+        console.log('📌 First server (sequential) → Second & Third servers (parallel)');
         console.log('─'.repeat(80));
-        execSync('npx playwright test --project=chromium', { stdio: 'inherit' });
+        execSync('npx playwright test --project=first-server --project=parallel-servers', { stdio: 'inherit' });
         
         console.log('\n✅ All tests completed with fresh authentication!');
         // Note: Final report will be printed by global teardown

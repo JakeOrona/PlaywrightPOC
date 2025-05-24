@@ -6,7 +6,7 @@ export default defineConfig({
     globalSetup: require.resolve('./global-setup'),
     globalTeardown: require.resolve('./global-teardown'),
     /* Run tests in files in parallel */
-    fullyParallel: false, // Changed to false to ensure proper test order
+    fullyParallel: false, // Keep false globally for proper test ordering
     timeout: 60000,
     /* Fail the build on CI if you accidentally left test.only in the source code. */
     forbidOnly: !!process.env.CI,
@@ -16,7 +16,7 @@ export default defineConfig({
         timeout: 60000
     },
     /* Opt out of parallel tests on CI. */
-    workers: process.env.CI ? 1 : 1, // Set to 1 to ensure sequential execution
+    workers: process.env.CI ? 1 : 2, // Allow 2 workers for parallel execution
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter: [
         ['html', { outputFolder: 'playwright-report', open: 'never' }],
@@ -41,17 +41,29 @@ export default defineConfig({
             testMatch: /.*\.setup\.ts/,
             use: { ...devices['Desktop Chrome'] },
         },
-        // Main test project with conditional dependencies
+        // First server test - must run first and sequentially
         {
-            name: 'chromium',
+            name: 'first-server',
             use: { 
                 ...devices['Desktop Chrome'],
                 // Use the storage state from setup
                 storageState: 'playwright/.auth/user.json'
             },
-            // Dependencies are determined at runtime based on auth state validity
-            dependencies: [],
-            testIgnore: /.*\.setup\.ts/,
+            dependencies: [], // No dependencies as it handles auth internally
+            testMatch: '**/first-vote.spec.ts',
+            fullyParallel: false, // Ensure this runs sequentially
+        },
+        // Second and third server tests - can run in parallel after first server
+        {
+            name: 'parallel-servers',
+            use: { 
+                ...devices['Desktop Chrome'],
+                // Use the storage state from setup
+                storageState: 'playwright/.auth/user.json'
+            },
+            dependencies: ['first-server'], // Wait for first server to complete
+            testMatch: ['**/second-vote.spec.ts', '**/third-vote.spec.ts'],
+            fullyParallel: true, // Allow parallel execution within this project
         }
     ],
 });
