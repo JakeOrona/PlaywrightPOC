@@ -140,12 +140,11 @@ async function forceAuthentication() {
         console.log('─'.repeat(80));
         
         // Set environment variable to indicate we're continuing from auth setup
-        process.env.CONTINUING_FROM_AUTH = 'true';
+        const env = { ...process.env, CONTINUING_FROM_AUTH: 'true' };
         execSync('npx playwright test --project=second-server --project=third-server', { 
             stdio: 'inherit',
-            env: { ...process.env, CONTINUING_FROM_AUTH: 'true' }
+            env: env
         });
-        delete process.env.CONTINUING_FROM_AUTH;
         
         console.log('\n✅ All tests completed with fresh authentication!');
         // Note: Final report will be printed by global teardown

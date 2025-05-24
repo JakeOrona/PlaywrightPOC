@@ -16,12 +16,12 @@ async function globalSetup() {
         // (not if we're continuing from auth setup)
         if (!process.env.CONTINUING_FROM_AUTH) {
             await clearVoteResults();
+            console.log('🗑️ -Cleared previous vote results for fresh run');
+        } else {
+            console.log('🔄 -Continuing from auth setup, preserving existing results');
         }
     } else {
         console.log('🔄 -Authentication setup required');
-        // Clear results when starting fresh auth
-        await clearVoteResults();
-        // Ensure environment variable is not set
         delete process.env.SKIP_AUTH_SETUP;
     }
 }
