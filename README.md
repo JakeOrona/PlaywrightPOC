@@ -6,7 +6,7 @@ PlaywrightPOC is a **smart test automation framework** built with [Playwright](h
 ## 📌 Features
 - **Playwright Test Automation** (using TypeScript)
 - **Page Object Model (POM)** for maintainable tests
-- **Smart Authentication System** with 27-hour validity checking
+- **Smart Authentication System** with 48-hour validity checking
 - **Storage State Management** to avoid redundant logins
 - **Duplicate Vote Prevention** with intelligent flag tracking
 - **Allure Reporting** for test analytics & visualization
@@ -133,7 +133,7 @@ npx playwright test --headed
 ## 🧠 Smart Authentication System
 
 ### **How It Works**
-1. **Authentication Validity Check**: Automatically checks if stored authentication is less than 27 hours old
+1. **Authentication Validity Check**: Automatically checks if stored authentication is less than 48 hours old
 2. **Smart Setup**: Only performs Steam login when authentication is invalid or missing
 3. **Vote Tracking**: Prevents duplicate voting on the first server using flag files
 4. **Dynamic Fallbacks**: Each test can handle authentication independently if needed
@@ -145,11 +145,11 @@ npx playwright test --headed
 └────────┬───────┘
          │
     ┌────▼────┐     ┌──────────────┐
-    │ < 27hrs │────▶│ Skip Setup   │
+    │ < 48hrs │────▶│ Skip Setup   │
     └─────────┘     └──────────────┘
          │
     ┌────▼────┐     ┌──────────────┐
-    │ > 27hrs │────▶│ Run Setup    │
+    │ > 48hrs │────▶│ Run Setup    │
     └─────────┘     └──────┬───────┘
                            │
                     ┌──────▼───────┐
@@ -208,7 +208,7 @@ PlaywrightPOC/
 Result: Each server voted on exactly once
 ```
 
-### **Scenario 2: Valid Existing Authentication (< 27 hours)**
+### **Scenario 2: Valid Existing Authentication (< 48 hours)**
 ```
 1. Setup runs → Sees valid auth → SKIPS setup
 2. First vote test → No flag found → Uses stored auth → Votes on server 1
@@ -217,7 +217,7 @@ Result: Each server voted on exactly once
 Result: Each server voted on exactly once
 ```
 
-### **Scenario 3: Expired Authentication (> 27 hours)**
+### **Scenario 3: Expired Authentication (> 48 hours)**
 ```
 1. Setup runs → Auth expired → Fresh Steam login → Votes on server 1 → Sets flag
 2. First vote test → Sees flag → SKIPS (no double vote!)
@@ -229,7 +229,7 @@ Result: Each server voted on exactly once
 ## 🔧 Configuration
 
 ### **Authentication Settings**
-- **Validity Period**: 27 hours (configurable in `helpers/authHelpers.ts`)
+- **Validity Period**: 48 hours (configurable in `helpers/authHelpers.ts`)
 - **Storage Location**: `playwright/.auth/user.json`
 - **Flag Tracking**: `playwright/.auth/first-vote-completed.flag`
 
@@ -266,7 +266,7 @@ Result: Each server voted on exactly once
 - **Tests hang on Steam login**: Check your `USER_NAME` and `PASSWORD` in `properties.env`
 - **Parallel execution conflicts**: The framework handles this automatically with smart authentication
 - **Screenshot/results permissions**: Ensure `test-results/` directory is writable
-- **Authentication expires frequently**: This is normal - the system uses 27-hour validity for security
+- **Authentication expires frequently**: This is normal - the system uses 48-hour validity for security
 
 ### **Quick Reset Commands**
 ```sh
