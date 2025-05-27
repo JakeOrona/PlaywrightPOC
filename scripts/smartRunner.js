@@ -4,11 +4,11 @@ const fs = require('fs').promises;
 const path = require('path');
 
 const AUTH_FILE_PATH = 'playwright/.auth/user.json';
-const AUTH_VALIDITY_HOURS = 48;
+const AUTH_VALIDITY_HOURS = 72;
 const RESULTS_FILE_PATH = 'test-results/vote-results.json';
 
 /**
- * Checks if the stored authentication state exists and is less than 48 hours old
+ * Checks if the stored authentication state exists and is less than 72 hours old
  * @returns Promise<boolean> - true if auth is valid and recent, false otherwise
  */
 async function isAuthStateValid() {
