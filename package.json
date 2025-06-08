@@ -1,25 +1,24 @@
 {
     "name": "jakes-practice",
     "version": "1.0.0",
-    "description": "",
+    "description": "Streamlined Playwright voting automation with smart auth handling",
     "main": "index.js",
     "scripts": {
         "test": "npx playwright test",
-        "test:setup": "npx playwright test --project=setup",
         "test:first": "npx playwright test --project=first-server",
-        "test:second": "npx playwright test --project=second-server",
+        "test:second": "npx playwright test --project=second-server", 
         "test:third": "npx playwright test --project=third-server",
-        "test:parallel": "npx playwright test --project=first-server --project=second-server --project=third-server", 
-        "test:remaining": "npx playwright test --project=second-server --project=third-server",
-        "test:votes": "npx playwright test --project=first-server --project=second-server --project=third-server",
+        "test:all": "npx playwright test --project=first-server --project=second-server --project=third-server",
         "test:smart": "node scripts/smartRunner.js",
         "test:force-auth": "node scripts/smartRunner.js force-auth",
-        "test:all": "npm run test:smart",
+        "test:individual": "node scripts/smartRunner.js test",
+        "test:help": "node scripts/smartRunner.js help",
         "test:allure": "npm run test && npm run allure:report",
         "allure:report": "npx allure generate allure-results -o allure-report --clean",
-        "allure:open": "npx allure open allure-report"
+        "allure:open": "npx allure open allure-report",
+        "auth:maintain": "node scripts/authMaintenance.js"
     },
-    "keywords": [],
+    "keywords": ["playwright", "automation", "voting", "steam", "testing"],
     "author": "",
     "license": "ISC",
     "devDependencies": {
