@@ -1,8 +1,8 @@
 // pageObjects/voting-handler.ts - STREAMLINED VERSION
 import { type Page } from '@playwright/test';
-import { VotingPage } from './voter';
+import { VotingPage } from './voting-page';
 import { SteamSignInPage } from './steam-signin';
-import { loadVotingLinks } from '../helpers/methods';
+import { loadVotingLink } from '../helpers/methods';
 import { logStep, logSuccess } from '../helpers/logging-helpers';
 
 /**
@@ -22,19 +22,6 @@ export class VotingHandler {
         
         this.votingPage = new VotingPage(page, verboseLogging);
         this.steamSignInPage = new SteamSignInPage(page, verboseLogging);
-    }
-
-    /**
-     * Loads voting links from a file
-     */
-    async loadLinksFromFile(filePath: string): Promise<void> {
-        if (this.verboseLogging) {
-            logStep(`Loading voting links from: ${filePath}`, '📂');
-        }
-        this.votingLinks = await loadVotingLinks(filePath);
-        if (this.verboseLogging) {
-            logSuccess(`Successfully loaded ${this.votingLinks.length} voting links`, '📩');
-        }
     }
 
     /**

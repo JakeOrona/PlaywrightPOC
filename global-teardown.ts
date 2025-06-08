@@ -1,6 +1,6 @@
 // global-teardown.ts
-import { printVoteResultsSummary } from './helpers/resultsCollector';
-import { logSectionHeader, logCompletionBanner } from './helpers/loggingHelpers';
+import { printVoteResultsSummary } from './helpers/results-collector';
+import { logSectionHeader, logCompletionBanner } from './helpers/logging-helpers';
 
 async function globalTeardown() {
     // Check if this is the auth setup run by looking at the projects being executed
