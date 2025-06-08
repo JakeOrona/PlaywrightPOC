@@ -1,5 +1,6 @@
-import { promises as fs } from 'fs';
+import { promises as fs, link } from 'fs';
 import { Page, expect } from '@playwright/test';
+import path from 'path';
 
 export interface LinkData {
   [key: string]: string;
@@ -8,11 +9,12 @@ export interface LinkData {
 /**
  * Reads a text file formatted as key-value pairs (e.g., "link1:https://example.com")
  * and returns an array of links.
- * @param filePath - Path to the text file.
+ * @param fileName - name of the voting link text file.
  * @returns A promise that resolves to an array of extracted links.
  */
-export async function loadVotingLinks(filePath: string): Promise<string[]> {
+export async function loadVotingLink(fileName: string, linkKey: number): Promise<string> {
     try {
+      const filePath = path.resolve(__dirname, `../test-data/${fileName}`);
       const fileContent = await fs.readFile(filePath, 'utf-8');
       const lines = fileContent.split('\n');
       const links: string[] = [];
@@ -28,9 +30,10 @@ export async function loadVotingLinks(filePath: string): Promise<string[]> {
         }
       }
   
-      return links;
+      return links[linkKey]; // Return the link for the specified key
+    
     } catch (error) {
-      console.error(`Error loading voting links from ${filePath}:`, error);
+      console.error(path.resolve(__dirname, `../test-data/${fileName}`), error);
       throw error;
     }
 }
