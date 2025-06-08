@@ -2,6 +2,7 @@ import {test, expect, type Locator, type Page } from '@playwright/test';
 import dotenv from 'dotenv';
 import { loadVotingLinks, handleVoteFormatting } from '../helpers/methods';
 import { logBanner, logSubsectionHeader, logStep, logSuccess, logWarning, logDivider } from '../helpers/loggingHelpers';
+import { refreshAuthState, shouldRefreshAuthState } from '../helpers/authHelpers';
 
 dotenv.config({ path: 'properties.env' });
 
@@ -42,14 +43,14 @@ export class VotingAndLinksPage {
         this.voteButton = page.locator('//a[@class="btn btn-success mr-1 my-1" and @role="button" and @title="Vote"]');
         this.agreeBox = page.locator('#accept');
         this.steamImage = page.locator('input[type="image"]');
-        this.signInText = page.locator('div.g5L61o-ZrHHmwLEugLjLI:has-text("Sign in")');
+        this.signInText = page.getByText('Sign in', { exact: true }).first();
         this.usernameInput = page
             .locator('form')
             .filter({ hasText: 'Sign in with account' })
             .locator('input[type="text"]');
         this.passwordInput = page.locator('input[type="password"]');
-        this.signInButton = page.locator('button.DjSvCZoKKfoNSmarsEcTS[type="submit"]');
-        this.steamMobileAppText = page.locator('div._2WgwHabhUV3cP6dHQPybw8:has-text("Use the Steam Mobile App to confirm your sign in...")');
+        this.signInButton = page.getByRole('button', { name: 'Sign in' });
+        this.steamMobileAppText = page.getByText('Use the Steam Mobile App to confirm your sign in...').first();
     }
 
     /**
@@ -305,4 +306,116 @@ export class VotingAndLinksPage {
         await tab.screenshot({ path: `./test-results/screenshot-${timestamp}.png` });
         return handleVoteFormatting(headingText, voteConfirmed, dailyLimitText, nextVoteText);
     }
+
+    /**
+     * Checks if Steam sign-in prompts are visible, indicating expired auth
+     * @param tab - The current page to check for sign-in elements
+     */
+    async isSteamSignInRequired(tab: Page): Promise<boolean> {
+        try {
+            // Check if any sign-in elements are visible
+            const signInVisible = await this.signInText.isVisible({ timeout: 2000 }).catch(() => false);
+            const buttonVisible = await this.signInButton.isVisible({ timeout: 2000 }).catch(() => false);
+            const emailVisible = await this.usernameInput.isVisible({ timeout: 2000 }).catch(() => false);
+            const passwordVisible = await this.passwordInput.isVisible({ timeout: 2000 }).catch(() => false);
+            const formVisible = await this.signInText.isVisible({ timeout: 2000 }).catch(() => false);
+            
+            const signInRequired = signInVisible || buttonVisible || emailVisible || passwordVisible || formVisible;
+            
+            if (signInRequired) {
+                this.log("Steam sign-in prompts detected, auth appears expired", '🔐', 'warning');
+            }
+            
+            return signInRequired;
+        } catch (error) {
+            this.log("Error checking Steam sign-in status", '⚠️', 'warning');
+            return false;
+        }
+    }
+
+    /**
+     * Vote status handling with auth refresh checking:
+     * Checks for Steam sign-in prompts and refreshes auth state appropriately
+     */
+    async handleVoteStatusWithRefresh(tab: Page): Promise<string> {
+        // Get vote results first
+        const voteResult = await this.handleVoteStatus(tab);
+        
+        // Check if Steam sign-in is required (indicates expired auth)
+        const signInRequired = await this.isSteamSignInRequired(tab);
+        
+        if (signInRequired) {
+            this.log("Steam sign-in prompts detected - auth has expired", '🔐', 'warning');
+            // Don't refresh auth state here - it's expired and needs manual re-auth
+            // The calling test should handle fallback to full sign-in flow
+            return voteResult;
+        }
+        
+        // If no sign-in required, we're still authenticated
+        // Check if we should proactively refresh auth (4+ days old)
+        const shouldRefresh = await shouldRefreshAuthState();
+        
+        if (shouldRefresh) {
+            this.log("Auth state is aging (4+ days), refreshing to extend session", '🔄');
+            await refreshAuthState(tab);
+            this.log("Auth state proactively refreshed", '✅', 'success');
+        } else {
+            // Even if not old, save current state to capture any token updates
+            await refreshAuthState(tab);
+            this.log("Auth state updated with current session", '✅', 'success');
+        }
+        
+        return voteResult;
+    }
+
+    /**
+     * Manual sign-in method with automatic auth refresh
+     */
+    async signInWithRefresh(tab: Page): Promise<string> {
+        const voteResult = await this.signIn(tab);
+        
+        // Always refresh auth state after successful sign-in
+        this.log("Fresh sign-in completed, saving updated auth state", '💾');
+        await refreshAuthState(tab);
+        
+        return voteResult;
+    }
+
+    /**
+     * Smart voting flow that detects auth state and handles accordingly
+     */
+    async smartVoteFlow(tab: Page): Promise<string> {
+        // First, perform the basic vote actions (click vote, accept terms, click Steam image)
+        await this.clickVoteFlow(tab);
+        
+        // Check if Steam sign-in is required
+        const signInRequired = await this.isSteamSignInRequired(tab);
+        
+        if (signInRequired) {
+            this.log("Steam authentication required, falling back to full sign-in flow", '🔐', 'warning');
+            // Fall back to full sign-in process
+            return await this.signIn(tab);
+        } else {
+            this.log("Steam session still valid, proceeding with quick vote", '✅', 'success');
+            
+            // Use existing Steam session - find and click the Steam Sign In button
+            const steamUserDisplayName = process.env.STEAM_USER_ID || '';
+            if (!steamUserDisplayName) {
+                throw new Error("❌ STEAM_USER_ID environment variable is required.");
+            }
+            
+            const steamUserID = tab.locator('#openidForm').getByText(steamUserDisplayName);
+            const steamSignInButton = tab.getByRole('button', { name: 'Sign In' });
+            
+            // Wait for elements and click sign-in
+            await expect(steamUserID).toBeVisible({ timeout: 40000 });
+            await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
+            await steamSignInButton.click({ force: true });
+            this.log("Steam sign-in completed using existing session", '🔑');
+            
+            // Handle vote status with refresh
+            return await this.handleVoteStatusWithRefresh(tab);
+        }
+    }
+
 }

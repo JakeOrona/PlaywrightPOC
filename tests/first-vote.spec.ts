@@ -75,7 +75,7 @@ test('vote on first server with authentication handling', async ({ page }) => {
         logStep(`Steam sign-in completed for first server`, '🔑');
         
         // Check vote status and log results
-        voteResult = await votingPage.handleVoteStatus(page);
+        voteResult = await votingPage.handleVoteStatusWithRefresh(page);
         logSuccess('First server vote completed with stored auth');
     }
     

@@ -1,6 +1,7 @@
 // helpers/authHelpers.ts
 import { promises as fs } from 'fs';
 import path from 'path';
+import { Page } from '@playwright/test';
 
 export interface AuthState {
     timestamp: number;
@@ -182,4 +183,57 @@ export async function clearAuthState(): Promise<void> {
  */
 export function getAuthFilePath(): string {
     return AUTH_FILE_PATH;
+}
+
+/**
+ * Refreshes the stored authentication state by saving the current browser context
+ * This captures any updated tokens/cookies from successful interactions
+ * @param page - The current page with active session
+ */
+export async function refreshAuthState(page: Page): Promise<void> {
+    try {
+        const authFile = getAuthFilePath();
+        await page.context().storageState({ path: authFile });
+        console.log('🔄 -Authentication state refreshed successfully');
+        
+        // Update the file timestamp to reset the age counter
+        const now = new Date();
+        await fs.utimes(authFile, now, now);
+        console.log('✅ -Auth state timestamp updated');
+    } catch (error) {
+        console.error('❌ -Error refreshing auth state:', error);
+    }
+}
+
+/**
+ * Checks if auth state should be proactively refreshed
+ * Returns true if auth is still valid but getting older (>4 days)
+ */
+export async function shouldRefreshAuthState(): Promise<boolean> {
+    try {
+        const authExists = await fs.access(AUTH_FILE_PATH).then(() => true).catch(() => false);
+        if (!authExists) return false;
+
+        const stats = await fs.stat(AUTH_FILE_PATH);
+        const fileAge = Date.now() - stats.mtime.getTime();
+        const ageInHours = fileAge / (60 * 60 * 1000);
+        
+        // Refresh if auth is older than 96 hours (4 days) but still valid (<168 hours)
+        return ageInHours > 96 && ageInHours < AUTH_VALIDITY_HOURS;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Gets the age of the auth state in hours
+ */
+export async function getAuthStateAge(): Promise<number> {
+    try {
+        const stats = await fs.stat(AUTH_FILE_PATH);
+        const fileAge = Date.now() - stats.mtime.getTime();
+        return fileAge / (60 * 60 * 1000);
+    } catch {
+        return Infinity; // If file doesn't exist, return infinite age
+    }
 }

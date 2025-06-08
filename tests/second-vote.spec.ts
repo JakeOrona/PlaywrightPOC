@@ -61,7 +61,7 @@ test('vote on second server using saved authentication', async ({ page }) => {
             logStep(`Steam sign-in completed for second server`, '🔑');
             
             // Check vote status and log results
-            voteResult = await votingPage.handleVoteStatus(page);
+            voteResult = await votingPage.handleVoteStatusWithRefresh(page);
             logSuccess('Second server vote completed with stored auth');
         }
         
