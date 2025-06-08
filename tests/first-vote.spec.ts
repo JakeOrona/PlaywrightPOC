@@ -1,16 +1,16 @@
 // tests/first-vote.spec.ts
 import { test, expect } from '@playwright/test';
-import { VotingAndLinksPage } from '../pageObjects/paradiseIslandLinks';
+import { VotingHandler } from '../page-objects/voting-handler';
 import { loadVotingLinks } from '../helpers/methods';
-import { isAuthStateValid, getAuthFilePath, isFirstVoteCompleted } from '../helpers/authHelpers';
-import { addVoteResult } from '../helpers/resultsCollector';
-import { logBanner, logStep, logSuccess, logWarning, logInfo } from '../helpers/loggingHelpers';
+import { isFirstVoteCompleted } from '../helpers/auth-helpers';
+import { addVoteResult } from '../helpers/results-collector';
+import { logBanner, logStep, logSuccess, logWarning, logInfo } from '../helpers/logging-helpers';
 import path from 'path';
 
 test('vote on first server with authentication handling', async ({ page }) => {
     logBanner('FIRST SERVER VOTING', '🎯');
     
-    const votingPage = new VotingAndLinksPage(page);
+    const votingHandler = new VotingHandler(page, true); // Enable verbose logging
     const filePath = path.resolve(__dirname, '../testData/links.txt');
     
     // Load voting links from file
@@ -32,57 +32,20 @@ test('vote on first server with authentication handling', async ({ page }) => {
     
     logStep(`Starting first server vote: ${votingLinks[0]}`, '📌');
     
-    // Navigate to first voting link
-    await page.goto(votingLinks[0], { timeout: 60000 });
-    logStep(`Opened first voting link: ${votingLinks[0]}`, '🌍');
+    // THIS IS THE MAGIC: All the complex logic is now just one simple call
+    // The method will:
+    // 1. Navigate to vote page
+    // 2. Click vote button
+    // 3. Accept terms and click Steam button
+    // 4. Check what Steam page we're on and handle accordingly
+    // 5. Always capture fresh auth state
+    // 6. Process and return vote results
+    const voteResult = await votingHandler.performStreamlinedVote(votingLinks[0]);
     
-    let voteResult: string;
+    // Extract server name and save results
     let serverName = 'First Server';
-    
-    // Check authentication and handle accordingly
-    const authIsValid = await isAuthStateValid();
-    
-    if (!authIsValid) {
-        logWarning('No valid auth detected, performing full Steam sign-in...');
-        // Perform full Steam sign-in and save auth state
-        voteResult = await votingPage.signIn(page);
-        logSuccess('First server vote completed with fresh authentication');
-        
-        // Save the authentication state for future tests
-        const authFile = getAuthFilePath();
-        await page.context().storageState({ path: authFile });
-        logStep(`Fresh authentication state saved to: ${authFile}`, '💾');
-    } else {
-        // If auth is valid, proceed with simplified flow
-        logSuccess('Using existing valid authentication');
-        
-        // Perform voting actions (no sign-in needed due to saved state)
-        await votingPage.clickVoteFlow(page);
-        logStep(`Vote process started for first server`, '🗳️');
-        
-        // Verify Steam sign-in and submit vote
-        const steamUserDisplayName = process.env.STEAM_USER_ID || '';
-        if (!steamUserDisplayName) {
-            throw new Error("❌ STEAM_USER_ID environment variable is required.");
-        }
-        const steamUserID = page.locator('#openidForm').getByText(steamUserDisplayName);
-        const steamSignInButton = page.getByRole('button', { name: 'Sign In' });
-        
-        // Wait for elements and click sign-in
-        await expect(steamUserID).toBeVisible({ timeout: 40000 });
-        await expect(steamSignInButton).toBeVisible({ timeout: 40000 });
-        await steamSignInButton.click({ force: true });
-        logStep(`Steam sign-in completed for first server`, '🔑');
-        
-        // Check vote status and log results
-        voteResult = await votingPage.handleVoteStatusWithRefresh(page);
-        logSuccess('First server vote completed with stored auth');
-    }
-    
-    // Extract server name from page if possible
     try {
-        const heading = await page.locator('h1').first().innerText();
-        serverName = heading || 'First Server';
+        serverName = await votingHandler.getPageTitle() || 'First Server';
     } catch {
         // Keep default name if extraction fails
     }
