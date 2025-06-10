@@ -78,21 +78,24 @@ export class SteamSignInPage {
     }
 
     /**
-     * Step 4: Check Steam page and handle auth accordingly
-     * This is the main method that implements your streamlined logic
+     * Check Steam page and handle auth accordingly
      */
     async handleSteamAuth(): Promise<void> {
         this.log("Checking Steam page state...", "🔍");
 
         // Check what type of Steam page we landed on
-        const needsSignIn = await this.checkIfSignInRequired();
+        const steamPageState = await this.determinePageState();
         
-        if (needsSignIn) {
+        if (steamPageState === 'needs-signin') {
+
             this.log("Steam sign-in required - auth is invalid/missing", '🔐', 'warning');
             await this.performFullSignIn();
-        } else {
+        } else if (steamPageState === 'already-signed-in') {
             this.log("Already signed in to Steam - auth is valid", '✅', 'success');
             await this.handleAlreadySignedIn();
+        } else {
+            this.log("Unable to determine Steam page state - proceeding with full sign-in", '❓', 'warning');
+            await this.performFullSignIn();
         }
 
         // Always capture current auth state after Steam interaction
@@ -100,18 +103,58 @@ export class SteamSignInPage {
     }
 
     /**
-     * Checks if Steam sign-in is required by looking for sign-in locators
+     * Determine the Steam page state for auth handling
+     * Returns 'needs-signin' if auth is invalid/missing
+     * Returns 'already-signed-in' if auth is valid
+     * Returns 'unknown' if unable to determine state
      */
-    private async checkIfSignInRequired(): Promise<boolean> {
+    private async determinePageState(): Promise<'needs-signin' | 'already-signed-in' | 'unknown'> {
         try {
-            // Check if any sign-in elements are visible (indicates auth is invalid)
+            this.log("Analyzing Steam page elements...", "🔍");
+            
+            // Wait a moment for page to fully load
+            await this.page.waitForTimeout(2000);
+            
+            // Check for sign-in elements (indicates auth is invalid)
             const signInVisible = await this.signInHeading.isVisible({ timeout: 3000 }).catch(() => false);
             const usernameVisible = await this.usernameInput.isVisible({ timeout: 3000 }).catch(() => false);
             const passwordVisible = await this.passwordInput.isVisible({ timeout: 3000 }).catch(() => false);
             
-            return signInVisible || usernameVisible || passwordVisible;
-        } catch {
-            return false;
+            // Check for already-signed-in elements (indicates auth is valid)
+            const userIdVisible = await this.steamUserID.isVisible({ timeout: 3000 }).catch(() => false);
+            const userIdAltVisible = await this.steamUserIDAlt.isVisible({ timeout: 3000 }).catch(() => false);
+            const signInBtnVisible = await this.steamSignInButtonMain.isVisible({ timeout: 3000 }).catch(() => false);
+            const signInBtnAltVisible = await this.steamSignInButtonAlt.isVisible({ timeout: 3000 }).catch(() => false);
+            
+            this.log(`Sign-in elements visible: signIn=${signInVisible}, username=${usernameVisible}, password=${passwordVisible}`, "📊");
+            this.log(`User elements visible: userId=${userIdVisible}, userIdAlt=${userIdAltVisible}, signInBtn=${signInBtnVisible}, signInBtnAlt=${signInBtnAltVisible}`, "📊");
+            
+            // If sign-in elements are present, we need to sign in
+            if (signInVisible || usernameVisible || passwordVisible) {
+                this.log("Detected sign-in page elements", "🔐");
+                return 'needs-signin';
+            }
+            
+            // If user confirmation elements are present, we're already signed in
+            if ((userIdVisible || userIdAltVisible) && (signInBtnVisible || signInBtnAltVisible)) {
+                this.log("Detected user confirmation elements", "✅");
+                return 'already-signed-in';
+            }
+            
+            // If we can't determine the state clearly, log page content for debugging
+            this.log("Could not determine page state clearly", "❓", 'warning');
+            
+            // Log current page URL and title for debugging
+            const url = this.page.url();
+            const title = await this.page.title().catch(() => 'Unknown');
+            this.log(`Current page - URL: ${url}, Title: ${title}`, "🌐");
+            
+            // Default to unknown, which will trigger full sign-in
+            return 'unknown';
+            
+        } catch (error) {
+            this.log(`Error determining page state: ${error}`, "❌", 'warning');
+            return 'unknown';
         }
     }
 
@@ -160,19 +203,46 @@ export class SteamSignInPage {
      */
     private async verifyAndClickSignIn(): Promise<void> {
         await test.step("Verify Steam user and click Sign In", async () => {
+            await this.page.waitForTimeout(3000);
+            
             try {
+                // Try main locators first
+                this.log("Attempting to verify Steam user with main locators...", "🔍");
                 await expect(this.steamUserID).toBeVisible({ timeout: 10000 });
                 await expect(this.steamUserID).toHaveText(this.steamUserDisplayName, { timeout: 5000 });
                 await expect(this.steamSignInButtonMain).toBeVisible({ timeout: 10000 });
                 await this.steamSignInButtonMain.click();
                 this.log(`Verified Steam ID and clicked Sign In: ${this.steamUserDisplayName}`, '✅', 'success');
-            } catch {
-                // Fallback to alternative locators
-                this.log("Trying alternative Steam locators...", '🔄');
-                await expect(this.steamUserIDAlt).toBeVisible({ timeout: 10000 });
-                await expect(this.steamSignInButtonAlt).toBeVisible({ timeout: 10000 });
-                await this.steamSignInButtonAlt.click({ force: true });
-                this.log(`Alternative Steam sign-in completed`, '✅', 'success');
+                
+            } catch (mainError) {
+                this.log("Main locators failed, trying alternative approach...", '🔄', 'warning');
+                
+                try {
+                    // Try alternative locators
+                    this.log("Attempting to verify Steam user with alternative locators...", "🔍");
+                    await expect(this.steamUserIDAlt).toBeVisible({ timeout: 10000 });
+                    await expect(this.steamSignInButtonAlt).toBeVisible({ timeout: 10000 });
+                    await this.steamSignInButtonAlt.click({ force: true });
+                    this.log(`Alternative Steam sign-in completed`, '✅', 'success');
+                    
+                } catch (altError) {
+                    // Last resort: try to find any Sign In button
+                    this.log("Alternative locators also failed, trying fallback approach...", '🔄', 'warning');
+                    
+                    // Log page content for debugging
+                    const pageContent = await this.page.content();
+                    this.log(`Current page URL: ${this.page.url()}`, "🌐");
+                    
+                    // Try to find any button with "Sign In" text
+                    const anySignInButton = this.page.getByRole('button').filter({ hasText: /Sign In/i }).first();
+                    if (await anySignInButton.isVisible({ timeout: 5000 })) {
+                        await anySignInButton.click();
+                        this.log("Clicked fallback Sign In button", '⚡', 'success');
+                    } else {
+                        // If we still can't find anything, throw a more descriptive error
+                        throw new Error(`❌ Could not find Steam user confirmation elements. Expected user: ${this.steamUserDisplayName}. Current URL: ${this.page.url()}`);
+                    }
+                }
             }
         });
     }

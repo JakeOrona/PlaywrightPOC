@@ -1,15 +1,14 @@
 // tests/first-vote.spec.ts
-import { test, expect } from '@playwright/test';
-import { VotingHandler } from '../page-objects/voting-handler';
+import { test } from '@playwright/test';
+import { VotingOnlyHandler } from '../page-objects/voting-only-handler';
 import { loadVotingLink } from '../helpers/methods';
 import { addVoteResult } from '../helpers/results-collector';
-import { logBanner, logStep, logSuccess, logWarning, logInfo } from '../helpers/logging-helpers';
-import path from 'path';
+import { logBanner, logStep } from '../helpers/logging-helpers';
 
-test('vote on first server with authentication handling', async ({ page }) => {
+test('vote on first server (auth pre-established)', async ({ page }) => {
     logBanner('FIRST SERVER VOTING', '🎯');
     
-    const votingHandler = new VotingHandler(page); 
+    const votingHandler = new VotingOnlyHandler(page); 
     const links = 'links.txt';
     
     // Load voting links from file
@@ -21,7 +20,8 @@ test('vote on first server with authentication handling', async ({ page }) => {
     
     logStep(`Starting first server vote: ${votingLink}`, '📌');
     
-    const voteResult = await votingHandler.performStreamlinedVote(votingLink);
+    // Use simplified voting flow (auth already established in Phase 1)
+    const voteResult = await votingHandler.performVote(votingLink);
     
     // Extract server name and save results
     let serverName = 'First Server';

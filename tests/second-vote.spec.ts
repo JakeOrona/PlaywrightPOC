@@ -1,15 +1,14 @@
 // tests/second-vote.spec.ts
 import { test } from '@playwright/test';
-import { VotingHandler } from '../page-objects/voting-handler';
+import { VotingOnlyHandler } from '../page-objects/voting-only-handler';
 import { loadVotingLink } from '../helpers/methods';
 import { addVoteResult } from '../helpers/results-collector';
 import { logBanner, logStep } from '../helpers/logging-helpers';
-import path from 'path';
 
-test('vote on second server with streamlined flow', async ({ page }) => {
+test('vote on second server (auth pre-established)', async ({ page }) => {
     logBanner('SECOND SERVER VOTING', '🎯');
     
-    const votingHandler = new VotingHandler(page);
+    const votingHandler = new VotingOnlyHandler(page);
     const links = 'links.txt';
 
     // Load voting links from file
@@ -21,7 +20,8 @@ test('vote on second server with streamlined flow', async ({ page }) => {
     
     logStep(`Starting second server vote: ${votingLink}`, '📌');
     
-    const voteResult = await votingHandler.performStreamlinedVote(votingLink);
+    // Use simplified voting flow (auth already established in Phase 1)
+    const voteResult = await votingHandler.performVote(votingLink);
     
     // Extract server name and save results
     let serverName = 'Second Server';

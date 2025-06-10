@@ -1,4 +1,4 @@
-// pageObjects/VotingPage.ts - STREAMLINED VERSION
+// pageObjects/Voting-page.ts - STREAMLINED VERSION
 import { test, expect, type Locator, type Page } from '@playwright/test';
 import { logStep, logSuccess, logWarning } from '../helpers/logging-helpers';
 import { handleVoteFormatting } from '../helpers/methods';

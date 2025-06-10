@@ -1,4 +1,3 @@
-// playwright.config.ts - STREAMLINED VERSION
 import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
@@ -16,12 +15,12 @@ export default defineConfig({
         timeout: 60000
     },
     /* Allow multiple workers for parallel execution */
-    workers: process.env.CI ? 1 : 3, // Allow parallel execution
+    workers: process.env.CI ? 1 : 3,
     /* Reporter to use. See https://playwright.dev/docs/test-reporters */
     reporter: [
         ['html', { outputFolder: 'playwright-report', open: 'never' }],
         ['allure-playwright', { outputFolder: 'allure-results' }],
-        ['list'], // Add list reporter for cleaner parallel output
+        ['list'],
     ],
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
@@ -31,35 +30,45 @@ export default defineConfig({
         screenshot: "only-on-failure"
     },
 
-    /* Configure projects for major browsers */
+    /* Configure projects */
     projects: [
-        // Each test handles its own auth automatically
+        // Authentication setup project (runs first)
+        {
+            name: 'auth-setup',
+            use: { 
+                ...devices['Desktop Chrome'],
+                headless: false // Show browser for Steam mobile approval
+            },
+            testMatch: '**/auth-setup.spec.ts',
+        },
+        
+
         {
             name: 'first-server',
             use: { 
                 ...devices['Desktop Chrome'],
-                // Auth state will be created/used automatically by the streamlined flow
                 storageState: 'playwright/.auth/user.json'
             },
             testMatch: '**/first-vote.spec.ts',
+            dependencies: ['auth-setup'],
         },
         {
             name: 'second-server',
             use: { 
                 ...devices['Desktop Chrome'],
-                // Auth state will be shared automatically
                 storageState: 'playwright/.auth/user.json'
             },
             testMatch: '**/second-vote.spec.ts',
+            dependencies: ['auth-setup'],
         },
         {
             name: 'third-server',
             use: { 
                 ...devices['Desktop Chrome'],
-                // Auth state will be shared automatically  
                 storageState: 'playwright/.auth/user.json'
             },
             testMatch: '**/third-vote.spec.ts',
+            dependencies: ['auth-setup'],
         }
     ],
 });

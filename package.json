@@ -6,19 +6,29 @@
     "scripts": {
         "test": "npx playwright test",
         "test:first": "npx playwright test --project=first-server",
-        "test:second": "npx playwright test --project=second-server", 
+        "test:second": "npx playwright test --project=second-server",
         "test:third": "npx playwright test --project=third-server",
         "test:all": "npx playwright test --project=first-server --project=second-server --project=third-server",
-        "test:smart": "node scripts/smartRunner.js",
-        "test:force-auth": "node scripts/smartRunner.js force-auth",
-        "test:individual": "node scripts/smartRunner.js test",
-        "test:help": "node scripts/smartRunner.js help",
+        "test:smart": "node scripts/smart-runner.js",
+        "test:force-auth": "node scripts/smart-runner.js force-auth",
+        "test:individual": "node scripts/smart-runner.js test",
+        "test:help": "node scripts/smart-runner.js help",
         "test:allure": "npm run test && npm run allure:report",
         "allure:report": "npx allure generate allure-results -o allure-report --clean",
         "allure:open": "npx allure open allure-report",
-        "auth:maintain": "node scripts/authMaintenance.js"
+        "auth:maintain": "node scripts/auth-maintenance.js",
+
+        "schedule:start": "node scripts/daily-scheduler.js start",
+        "schedule:test": "node scripts/daily-scheduler.js test-now",
+        "schedule:help": "node scripts/daily-scheduler.js help"
     },
-    "keywords": ["playwright", "automation", "voting", "steam", "testing"],
+    "keywords": [
+        "playwright",
+        "automation",
+        "voting",
+        "steam",
+        "testing"
+    ],
     "author": "",
     "license": "ISC",
     "devDependencies": {
@@ -29,6 +39,7 @@
     },
     "dependencies": {
         "dotenv": "^16.4.7",
-        "eslint": "^9.21.0"
+        "eslint": "^9.21.0",
+        "node-cron": "^4.1.0"
     }
 }
